@@ -1,6 +1,8 @@
 import { z } from "zod";
 import {
+  curriculumAxisSchema,
   disciplineSchema,
+  examTypeSchema,
   frameworkSchema,
   gradeSchema,
   objectIdSchema,
@@ -14,6 +16,8 @@ export const createExamSchema = z
     discipline: disciplineSchema,
     grade: gradeSchema,
     framework: frameworkSchema,
+    examType: examTypeSchema.optional(),
+    voidedQuestionIds: z.array(objectIdSchema).optional(),
     questionIds: z.array(objectIdSchema).min(1).optional(),
     blueprint: z
       .array(
@@ -23,14 +27,40 @@ export const createExamSchema = z
         }),
       )
       .optional(),
+    blueprintByAxis: z
+      .array(
+        z.object({
+          axis: curriculumAxisSchema,
+          count: z.number().int().min(1).max(20),
+        }),
+      )
+      .optional(),
   })
-  .refine((v) => Boolean(v.questionIds?.length || v.blueprint?.length), {
-    message: "Informe questionIds ou blueprint.",
-  });
+  .refine(
+    (v) => {
+      const flags = [
+        Boolean(v.questionIds?.length),
+        Boolean(v.blueprint?.length),
+        Boolean(v.blueprintByAxis?.length),
+      ].filter(Boolean).length;
+      return flags === 1;
+    },
+    { message: "Informe exatamente um de: questionIds, blueprint ou blueprintByAxis." },
+  );
 
 export const listExamsSchema = z.object({
   schoolId: objectIdSchema.optional(),
   classroomId: objectIdSchema.optional(),
   discipline: disciplineSchema.optional(),
   grade: gradeSchema.optional(),
+});
+
+export const simulatedBlueprintQuerySchema = z.object({
+  framework: frameworkSchema,
+  discipline: disciplineSchema,
+  grade: gradeSchema,
+});
+
+export const examIdParamSchema = z.object({
+  id: objectIdSchema,
 });

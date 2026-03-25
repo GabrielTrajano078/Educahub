@@ -12,6 +12,11 @@ interface ExamDocument {
   discipline: "LP" | "MAT";
   grade: "5" | "9";
   framework: "SAEB" | "SPAS";
+  examType: "PERSONALIZADA" | "RECUPERACAO" | "SIMULADO";
+  /** Código impresso no cartão-resposta. */
+  examCode: string;
+  /** Questões anuladas após aplicação (gabarito ignora / marcação N/A). */
+  voidedQuestionIds: Types.ObjectId[];
   createdBy: Types.ObjectId;
   questions: ExamQuestion[];
 }
@@ -32,6 +37,15 @@ const examSchema = new Schema<ExamDocument>(
     discipline: { type: String, required: true, enum: ["LP", "MAT"], index: true },
     grade: { type: String, required: true, enum: ["5", "9"], index: true },
     framework: { type: String, required: true, enum: ["SAEB", "SPAS"], index: true },
+    examType: {
+      type: String,
+      required: true,
+      enum: ["PERSONALIZADA", "RECUPERACAO", "SIMULADO"],
+      default: "PERSONALIZADA",
+      index: true,
+    },
+    examCode: { type: String, required: true, unique: true, sparse: true, index: true },
+    voidedQuestionIds: { type: [Schema.Types.ObjectId], default: [] },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
     questions: { type: [examQuestionSchema], required: true, validate: (value: ExamQuestion[]) => value.length > 0 },
   },

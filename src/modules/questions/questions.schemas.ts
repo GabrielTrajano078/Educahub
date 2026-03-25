@@ -1,10 +1,12 @@
 import { z } from "zod";
 import {
   answerSchema,
+  curriculumAxisSchema,
   difficultySchema,
   disciplineSchema,
   frameworkSchema,
   gradeSchema,
+  objectIdSchema,
 } from "../common/schemas";
 
 export const listQuestionsSchema = z.object({
@@ -12,6 +14,7 @@ export const listQuestionsSchema = z.object({
   grade: gradeSchema.optional(),
   framework: frameworkSchema.optional(),
   descriptor: z.string().min(1).optional(),
+  axis: curriculumAxisSchema.optional(),
   difficulty: difficultySchema.optional(),
 });
 
@@ -20,6 +23,7 @@ export const createQuestionSchema = z.object({
   grade: gradeSchema,
   framework: frameworkSchema,
   descriptor: z.string().min(1),
+  axis: curriculumAxisSchema.optional(),
   difficulty: difficultySchema,
   prompt: z.string().min(1),
   optionA: z.string().min(1),
@@ -27,4 +31,13 @@ export const createQuestionSchema = z.object({
   optionC: z.string().min(1),
   optionD: z.string().min(1),
   answer: answerSchema,
+});
+
+export const questionSuggestionsSchema = z.object({
+  classroomId: objectIdSchema,
+  discipline: disciplineSchema,
+  grade: gradeSchema,
+  framework: frameworkSchema,
+  weakThreshold: z.coerce.number().min(0).max(100).optional(),
+  limit: z.coerce.number().int().min(1).max(50).optional(),
 });

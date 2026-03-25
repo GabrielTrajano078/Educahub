@@ -5,9 +5,18 @@ import { createSchoolSchema } from "./schools.schemas";
 
 export const schoolsRouter = Router();
 
-schoolsRouter.get("/", requireAuth, requireRole("admin", "gestor"), async (_req, res, next) => {
+schoolsRouter.get("/", requireAuth, requireRole("admin", "gestor"), async (req, res, next) => {
   try {
-    const schools = await SchoolModel.find().sort({ name: 1 }).lean();
+    let query: Record<string, unknown> = {};
+    if (req.user!.role === "gestor") {
+      if (!req.user!.municipalityCode) {
+        res.status(403).json({ message: "Gestor sem municipio vinculado." });
+        return;
+      }
+      query = { municipalityCode: req.user!.municipalityCode };
+    }
+
+    const schools = await SchoolModel.find(query).sort({ name: 1 }).lean();
     res.json(schools);
   } catch (error) {
     next(error);
@@ -17,7 +26,24 @@ schoolsRouter.get("/", requireAuth, requireRole("admin", "gestor"), async (_req,
 schoolsRouter.post("/", requireAuth, requireRole("admin", "gestor"), async (req, res, next) => {
   try {
     const data = createSchoolSchema.parse(req.body);
-    const school = await SchoolModel.create(data);
+
+    if (req.user!.role === "gestor") {
+      if (!req.user!.municipalityCode) {
+        res.status(403).json({ message: "Gestor sem municipio vinculado." });
+        return;
+      }
+      if (data.municipalityCode && data.municipalityCode !== req.user!.municipalityCode) {
+        res.status(403).json({ message: "Municipio divergente do perfil." });
+        return;
+      }
+    }
+
+    const school = await SchoolModel.create({
+      ...data,
+      ...(req.user!.role === "gestor" && !data.municipalityCode
+        ? { municipalityCode: req.user!.municipalityCode }
+        : {}),
+    });
     res.status(201).json({ id: String(school._id) });
   } catch (error) {
     next(error);

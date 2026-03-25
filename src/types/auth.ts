@@ -4,4 +4,5 @@ export interface AuthUser {
   id: string;
   role: UserRole;
   schoolId: string | null;
+  municipalityCode: string | null;
 }

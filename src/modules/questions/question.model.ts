@@ -5,6 +5,8 @@ interface QuestionDocument {
   grade: "5" | "9";
   framework: "SAEB" | "SPAS";
   descriptor: string;
+  /** Eixo curricular para relatórios (desempenho por eixo). */
+  axis?: string;
   difficulty: "FACIL" | "MEDIO" | "DIFICIL";
   prompt: string;
   optionA: string;
@@ -20,6 +22,7 @@ const questionSchema = new Schema<QuestionDocument>(
     grade: { type: String, required: true, enum: ["5", "9"], index: true },
     framework: { type: String, required: true, enum: ["SAEB", "SPAS"], index: true },
     descriptor: { type: String, required: true, index: true },
+    axis: { type: String, index: true },
     difficulty: { type: String, required: true, enum: ["FACIL", "MEDIO", "DIFICIL"], index: true },
     prompt: { type: String, required: true },
     optionA: { type: String, required: true },
@@ -38,5 +41,6 @@ questionSchema.index({
   descriptor: 1,
   difficulty: 1,
 });
+questionSchema.index({ discipline: 1, grade: 1, framework: 1, axis: 1 });
 
 export const QuestionModel = model<QuestionDocument>("Question", questionSchema);

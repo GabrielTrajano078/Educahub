@@ -7,6 +7,8 @@ interface UserDocument {
   passwordHash: string;
   role: UserRole;
   schoolId: string | null;
+  /** Código do município (ex.: IBGE) para perfil gestor acompanhar a rede. */
+  municipalityCode: string | null;
 }
 
 const userSchema = new Schema<UserDocument>(
@@ -20,6 +22,7 @@ const userSchema = new Schema<UserDocument>(
       enum: ["admin", "professor", "coordenador", "gestor"],
     },
     schoolId: { type: String, default: null },
+    municipalityCode: { type: String, default: null, index: true },
   },
   { timestamps: true },
 );

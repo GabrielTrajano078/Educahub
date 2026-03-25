@@ -3,6 +3,8 @@ import jwt from "jsonwebtoken";
 import { env } from "../config/env";
 import { AuthUser, UserRole } from "../types/auth";
 
+const ROLES: UserRole[] = ["admin", "professor", "coordenador", "gestor"];
+
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
   const authHeader = req.headers.authorization;
 
@@ -14,8 +16,18 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
   const token = authHeader.replace("Bearer ", "");
 
   try {
-    const payload = jwt.verify(token, env.JWT_SECRET) as AuthUser;
-    req.user = payload;
+    const payload = jwt.verify(token, env.JWT_SECRET) as AuthUser & Record<string, unknown>;
+    if (!ROLES.includes(payload.role as UserRole)) {
+      res.status(401).json({ message: "Token invalido." });
+      return;
+    }
+
+    req.user = {
+      id: String(payload.id),
+      role: payload.role as UserRole,
+      schoolId: payload.schoolId ?? null,
+      municipalityCode: payload.municipalityCode ?? null,
+    };
     next();
   } catch {
     res.status(401).json({ message: "Token invalido ou expirado." });
