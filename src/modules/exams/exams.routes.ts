@@ -4,6 +4,7 @@ import { buildPublicFileUrl, saveBufferToStorage } from "../../lib/file-storage"
 import { canAccessClassroom, canAccessSchool, canAccessStudent } from "../../lib/access";
 import { upload } from "../../lib/upload";
 import { requireAuth, requireRole } from "../../middlewares/auth";
+import { AuthUser } from "../../types/auth";
 import { ClassroomModel } from "../classes/classroom.model";
 import { buildAnswerSheetsPdf } from "../results/answer-sheet-pdf";
 import { generateUniqueSheetCode } from "../results/answer-sheet-code";
@@ -29,6 +30,18 @@ export const examsRouter = Router();
 
 function getBaseUrl(req: any): string {
   return `${req.protocol}://${req.get("host")}`;
+}
+
+async function canAccessExamRecord(
+  user: AuthUser,
+  exam: { schoolId: unknown; classroomId: unknown },
+): Promise<boolean> {
+  const schoolOk = await canAccessSchool(user, String(exam.schoolId));
+  if (!schoolOk) return false;
+  if (user.role === "professor") {
+    return canAccessClassroom(user, String(exam.classroomId));
+  }
+  return true;
 }
 
 async function buildOfficialAnswerKeyItems(examId: string) {
@@ -69,6 +82,40 @@ examsRouter.get("/blueprint/simulado", requireAuth, async (req, res, next) => {
   }
 });
 
+/** Lista cartões-resposta gerados para a prova (correção / acompanhamento). */
+examsRouter.get("/:id/answer-sheets", requireAuth, async (req, res, next) => {
+  try {
+    const { id } = examIdParamSchema.parse(req.params);
+    const exam = await ExamModel.findById(id).lean();
+    if (!exam) {
+      res.status(404).json({ message: "Prova nao encontrada." });
+      return;
+    }
+
+    const allowed = await canAccessExamRecord(req.user!, exam);
+    if (!allowed) {
+      res.status(403).json({ message: "Acesso negado a esta prova." });
+      return;
+    }
+
+    const sheets = await AnswerSheetModel.find({ examId: exam._id }).sort({ "studentSnapshot.fullName": 1 }).lean();
+    res.json(
+      sheets.map((s) => ({
+        id: String(s._id),
+        studentId: String(s.studentId),
+        sheetCode: s.sheetCode,
+        status: s.status,
+        processingStatus: s.processingStatus,
+        studentSnapshot: s.studentSnapshot,
+        generatedAt: s.generatedAt,
+        processedAt: s.processedAt ?? null,
+      })),
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
 examsRouter.get("/", requireAuth, async (req, res, next) => {
   try {
     const filters = listExamsSchema.parse(req.query);
@@ -79,7 +126,28 @@ examsRouter.get("/", requireAuth, async (req, res, next) => {
       ...(filters.grade ? { grade: filters.grade } : {}),
     };
 
-    if (req.user!.role === "professor" || req.user!.role === "coordenador") {
+    if (req.user!.role === "professor") {
+      if (!req.user!.schoolId) {
+        res.status(403).json({ message: "Usuario sem escola vinculada." });
+        return;
+      }
+      query.schoolId = req.user!.schoolId;
+      const assigned = req.user!.classroomIds.filter((id) => Types.ObjectId.isValid(id));
+      if (assigned.length === 0) {
+        res.json([]);
+        return;
+      }
+      const inAssigned = { $in: assigned.map((id) => new Types.ObjectId(id)) };
+      if (filters.classroomId) {
+        if (!assigned.includes(filters.classroomId)) {
+          res.json([]);
+          return;
+        }
+        query.classroomId = filters.classroomId;
+      } else {
+        query.classroomId = inAssigned;
+      }
+    } else if (req.user!.role === "coordenador") {
       if (!req.user!.schoolId) {
         res.status(403).json({ message: "Usuario sem escola vinculada." });
         return;
@@ -115,7 +183,7 @@ examsRouter.get("/:id", requireAuth, async (req, res, next) => {
       return;
     }
 
-    const allowed = await canAccessSchool(req.user!, String(exam.schoolId));
+    const allowed = await canAccessExamRecord(req.user!, exam);
     if (!allowed) {
       res.status(403).json({ message: "Acesso negado a esta prova." });
       return;
@@ -304,7 +372,7 @@ examsRouter.post(
         return;
       }
 
-      const allowed = await canAccessSchool(req.user!, String(exam.schoolId));
+      const allowed = await canAccessExamRecord(req.user!, exam);
       if (!allowed) {
         res.status(403).json({ message: "Acesso negado a esta prova." });
         return;
@@ -368,7 +436,7 @@ examsRouter.get("/:id/answer-key", requireAuth, async (req, res, next) => {
       return;
     }
 
-    const allowed = await canAccessSchool(req.user!, String(exam.schoolId));
+    const allowed = await canAccessExamRecord(req.user!, exam);
     if (!allowed) {
       res.status(403).json({ message: "Acesso negado a esta prova." });
       return;
@@ -413,7 +481,7 @@ examsRouter.post(
         return;
       }
 
-      const allowed = await canAccessSchool(req.user!, String(exam.schoolId));
+      const allowed = await canAccessExamRecord(req.user!, exam);
       if (!allowed) {
         res.status(403).json({ message: "Acesso negado a esta prova." });
         return;
@@ -494,7 +562,7 @@ examsRouter.post(
         return;
       }
 
-      const allowed = await canAccessSchool(req.user!, String(exam.schoolId));
+      const allowed = await canAccessExamRecord(req.user!, exam);
       if (!allowed) {
         res.status(403).json({ message: "Acesso negado a esta prova." });
         return;

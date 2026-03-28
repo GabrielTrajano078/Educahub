@@ -51,12 +51,15 @@ authRouter.post("/login", async (req, res, next) => {
       return;
     }
 
+    const classroomIds = (user.classroomIds ?? []).map((id) => String(id));
+
     const token = jwt.sign(
       {
         id: String(user._id),
         role: user.role,
         schoolId: user.schoolId ?? null,
         municipalityCode: user.municipalityCode ?? null,
+        classroomIds,
       },
       env.JWT_SECRET,
       { expiresIn: "8h" },
@@ -71,6 +74,7 @@ authRouter.post("/login", async (req, res, next) => {
         role: user.role,
         schoolId: user.schoolId ?? null,
         municipalityCode: user.municipalityCode ?? null,
+        classroomIds,
       },
     });
   } catch (error) {
@@ -81,13 +85,15 @@ authRouter.post("/login", async (req, res, next) => {
 authRouter.get("/me", requireAuth, async (req, res, next) => {
   try {
     const user = await UserModel.findById(req.user!.id)
-      .select("fullName email role schoolId municipalityCode")
+      .select("fullName email role schoolId municipalityCode classroomIds")
       .lean();
 
     if (!user) {
       res.status(404).json({ message: "Usuario nao encontrado." });
       return;
     }
+
+    const classroomIds = (user.classroomIds ?? []).map((id) => String(id));
 
     res.json({
       id: String(user._id),
@@ -96,6 +102,7 @@ authRouter.get("/me", requireAuth, async (req, res, next) => {
       role: user.role,
       schoolId: user.schoolId ?? null,
       municipalityCode: user.municipalityCode ?? null,
+      classroomIds,
     });
   } catch (error) {
     next(error);

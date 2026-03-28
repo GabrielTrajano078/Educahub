@@ -22,11 +22,17 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
       return;
     }
 
+    const rawClassrooms = payload.classroomIds;
+    const classroomIds = Array.isArray(rawClassrooms)
+      ? rawClassrooms.map((id) => String(id))
+      : [];
+
     req.user = {
       id: String(payload.id),
       role: payload.role as UserRole,
       schoolId: payload.schoolId ?? null,
       municipalityCode: payload.municipalityCode ?? null,
+      classroomIds,
     };
     next();
   } catch {

@@ -1,3 +1,4 @@
+import { Types } from "mongoose";
 import { Router } from "express";
 import { canAccessSchool } from "../../lib/access";
 import { requireAuth, requireRole } from "../../middlewares/auth";
@@ -14,7 +15,19 @@ classesRouter.get("/", requireAuth, async (req, res, next) => {
       ...(filters.grade ? { grade: filters.grade } : {}),
     };
 
-    if (req.user!.role === "professor" || req.user!.role === "coordenador") {
+    if (req.user!.role === "professor") {
+      if (!req.user!.schoolId) {
+        res.status(403).json({ message: "Usuario sem escola vinculada." });
+        return;
+      }
+      query.schoolId = req.user!.schoolId;
+      const assigned = req.user!.classroomIds.filter((id) => Types.ObjectId.isValid(id));
+      if (assigned.length === 0) {
+        res.json([]);
+        return;
+      }
+      query._id = { $in: assigned.map((id) => new Types.ObjectId(id)) };
+    } else if (req.user!.role === "coordenador") {
       if (!req.user!.schoolId) {
         res.status(403).json({ message: "Usuario sem escola vinculada." });
         return;

@@ -27,14 +27,28 @@ export async function canAccessClassroom(user: AuthUser, classroomId: string): P
 
   const classroom = await ClassroomModel.findById(classroomId).select("schoolId").lean();
   if (!classroom) return false;
-  return canAccessSchool(user, String(classroom.schoolId));
+
+  if (!(await canAccessSchool(user, String(classroom.schoolId)))) return false;
+
+  if (user.role === "professor") {
+    return user.classroomIds.includes(classroomId);
+  }
+
+  return true;
 }
 
 export async function canAccessStudent(user: AuthUser, studentId: string): Promise<boolean> {
   if (user.role === "admin") return true;
   if (!Types.ObjectId.isValid(studentId)) return false;
 
-  const student = await StudentModel.findById(studentId).select("schoolId").lean();
+  const student = await StudentModel.findById(studentId).select("schoolId classroomId").lean();
   if (!student) return false;
-  return canAccessSchool(user, String(student.schoolId));
+
+  if (!(await canAccessSchool(user, String(student.schoolId)))) return false;
+
+  if (user.role === "professor") {
+    return user.classroomIds.includes(String(student.classroomId));
+  }
+
+  return true;
 }

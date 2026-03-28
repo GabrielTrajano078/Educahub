@@ -1,4 +1,4 @@
-import { Schema, model } from "mongoose";
+import { Schema, Types, model } from "mongoose";
 import { UserRole } from "../../types/auth";
 
 interface UserDocument {
@@ -9,6 +9,8 @@ interface UserDocument {
   schoolId: string | null;
   /** Código do município (ex.: IBGE) para perfil gestor acompanhar a rede. */
   municipalityCode: string | null;
+  /** Turmas vinculadas ao professor (demais perfis mantêm vazio). */
+  classroomIds: Types.ObjectId[];
 }
 
 const userSchema = new Schema<UserDocument>(
@@ -23,8 +25,14 @@ const userSchema = new Schema<UserDocument>(
     },
     schoolId: { type: String, default: null },
     municipalityCode: { type: String, default: null, index: true },
+    classroomIds: {
+      type: [{ type: Schema.Types.ObjectId, ref: "Classroom" }],
+      default: [],
+    },
   },
   { timestamps: true },
 );
+
+userSchema.index({ classroomIds: 1 });
 
 export const UserModel = model<UserDocument>("User", userSchema);

@@ -8,6 +8,7 @@ import { ZodError } from "zod";
 import { openApiDocument } from "./docs/openapi";
 import { getUploadRoot } from "./lib/file-storage";
 import { authRouter } from "./modules/auth/auth.routes";
+import { usersRouter } from "./modules/auth/users.routes";
 import { classesRouter } from "./modules/classes/classes.routes";
 import { examsRouter } from "./modules/exams/exams.routes";
 import { questionsRouter } from "./modules/questions/questions.routes";
@@ -37,6 +38,7 @@ app.get("/openapi.json", (_req, res) => {
 });
 
 app.use("/api/auth", authRouter);
+app.use("/api/auth", usersRouter);
 app.use("/api/schools", schoolsRouter);
 app.use("/api/classes", classesRouter);
 app.use("/api/students", studentsRouter);

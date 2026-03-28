@@ -1,5 +1,6 @@
+import { Types } from "mongoose";
 import { Router } from "express";
-import { canAccessSchool } from "../../lib/access";
+import { canAccessClassroom, canAccessSchool } from "../../lib/access";
 import { requireAuth, requireRole } from "../../middlewares/auth";
 import { ClassroomModel } from "../classes/classroom.model";
 import { StudentModel } from "./student.model";
@@ -15,7 +16,28 @@ studentsRouter.get("/", requireAuth, async (req, res, next) => {
       ...(filters.classroomId ? { classroomId: filters.classroomId } : {}),
     };
 
-    if (req.user!.role === "professor" || req.user!.role === "coordenador") {
+    if (req.user!.role === "professor") {
+      if (!req.user!.schoolId) {
+        res.status(403).json({ message: "Usuario sem escola vinculada." });
+        return;
+      }
+      query.schoolId = req.user!.schoolId;
+      const assigned = req.user!.classroomIds.filter((id) => Types.ObjectId.isValid(id));
+      if (assigned.length === 0) {
+        res.json([]);
+        return;
+      }
+      const inAssigned = { $in: assigned.map((id) => new Types.ObjectId(id)) };
+      if (filters.classroomId) {
+        if (!assigned.includes(filters.classroomId)) {
+          res.json([]);
+          return;
+        }
+        query.classroomId = filters.classroomId;
+      } else {
+        query.classroomId = inAssigned;
+      }
+    } else if (req.user!.role === "coordenador") {
       if (!req.user!.schoolId) {
         res.status(403).json({ message: "Usuario sem escola vinculada." });
         return;
@@ -42,6 +64,14 @@ studentsRouter.post(
       if (!ok) {
         res.status(403).json({ message: "Acesso negado a esta escola." });
         return;
+      }
+
+      if (req.user!.role === "professor") {
+        const classOk = await canAccessClassroom(req.user!, data.classroomId);
+        if (!classOk) {
+          res.status(403).json({ message: "Acesso negado a esta turma." });
+          return;
+        }
       }
 
       const classroom = await ClassroomModel.findById(data.classroomId).select("schoolId").lean();

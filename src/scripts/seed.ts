@@ -104,20 +104,23 @@ async function ensureUser(params: {
   role: "admin" | "professor" | "coordenador" | "gestor";
   schoolId?: string | null;
   municipalityCode?: string | null;
+  classroomIds?: Types.ObjectId[];
 }) {
   const passwordHash = await bcrypt.hash(defaultPassword, 10);
+  const setDoc: Record<string, unknown> = {
+    fullName: params.fullName,
+    email: params.email,
+    passwordHash,
+    role: params.role,
+    schoolId: params.schoolId ?? null,
+    municipalityCode: params.municipalityCode ?? null,
+  };
+  if (params.classroomIds !== undefined) {
+    setDoc.classroomIds = params.classroomIds;
+  }
   return UserModel.findOneAndUpdate(
     { email: params.email },
-    {
-      $set: {
-        fullName: params.fullName,
-        email: params.email,
-        passwordHash,
-        role: params.role,
-        schoolId: params.schoolId ?? null,
-        municipalityCode: params.municipalityCode ?? null,
-      },
-    },
+    { $set: setDoc },
     { upsert: true, new: true, setDefaultsOnInsert: true },
   );
 }
@@ -166,13 +169,6 @@ async function main() {
     role: "admin",
   });
 
-  const professor = await ensureUser({
-    fullName: "Professor Demo",
-    email: "professor@saeb.local",
-    role: "professor",
-    schoolId: String(school._id),
-  });
-
   const gestor = await ensureUser({
     fullName: "Gestor Municipal Demo",
     email: "gestor@saeb.local",
@@ -191,6 +187,14 @@ async function main() {
     },
     { upsert: true, new: true, setDefaultsOnInsert: true },
   );
+
+  const professor = await ensureUser({
+    fullName: "Professor Demo",
+    email: "professor@saeb.local",
+    role: "professor",
+    schoolId: String(school._id),
+    classroomIds: [new Types.ObjectId(String(classroom._id))],
+  });
 
   const students = await Promise.all(
     [

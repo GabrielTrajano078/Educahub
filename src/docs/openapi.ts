@@ -87,8 +87,31 @@ export const openApiDocument = {
               role: { type: "string", enum: ["admin", "professor", "coordenador", "gestor"] },
               schoolId: { anyOf: [objectId, { type: "null" }] },
               municipalityCode: { anyOf: [{ type: "string", example: "2304400" }, { type: "null" }] },
+              classroomIds: {
+                type: "array",
+                items: objectId,
+                description: "Turmas atribuidas ao professor; vazio para demais perfis.",
+              },
             },
           },
+        },
+      },
+      PatchProfessorClassroomsRequest: {
+        type: "object",
+        required: ["classroomIds"],
+        properties: {
+          classroomIds: {
+            type: "array",
+            items: objectId,
+            description: "Lista de IDs de turma da mesma escola do professor.",
+          },
+        },
+      },
+      ProfessorClassroomsResponse: {
+        type: "object",
+        properties: {
+          id: objectId,
+          classroomIds: { type: "array", items: objectId },
         },
       },
       SchoolRequest: {
@@ -354,12 +377,52 @@ export const openApiDocument = {
                     role: { type: "string" },
                     schoolId: { anyOf: [objectId, { type: "null" }] },
                     municipalityCode: { anyOf: [{ type: "string" }, { type: "null" }] },
+                    classroomIds: { type: "array", items: objectId },
                   },
                 },
               },
             },
           },
           401: errorResponse,
+        },
+      },
+    },
+    "/api/auth/users/{userId}/classrooms": {
+      patch: {
+        tags: ["Auth"],
+        summary: "Admin: atribui turmas a um professor",
+        description:
+          "Atualiza `classroomIds` apenas para usuarios com role `professor`. Turmas devem existir e pertencer a mesma `schoolId` do professor.",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "userId",
+            in: "path",
+            required: true,
+            schema: objectId,
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/PatchProfessorClassroomsRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Turmas atualizadas",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ProfessorClassroomsResponse" },
+              },
+            },
+          },
+          400: errorResponse,
+          401: errorResponse,
+          403: errorResponse,
+          404: errorResponse,
         },
       },
     },
