@@ -17,7 +17,6 @@ import { StudentModel } from "../modules/students/student.model";
 type SeedQuestion = {
   descriptor: string;
   axis: "LEITURA" | "INTERPRETACAO" | "GENEROS_TEXTUAIS" | "LINGUA_ESTUDO";
-  difficulty: "MUITO_FACIL" | "FACIL" | "MEDIO" | "DIFICIL" | "MUITO_DIFICIL";
   prompt: string;
   optionA: string;
   optionB: string;
@@ -33,7 +32,6 @@ const seedQuestions: SeedQuestion[] = [
   {
     descriptor: "D1",
     axis: "LEITURA",
-    difficulty: "FACIL",
     prompt: "No bilhete, qual e a principal finalidade do texto?",
     optionA: "Contar uma historia de aventura.",
     optionB: "Convidar os alunos para a reuniao.",
@@ -44,7 +42,6 @@ const seedQuestions: SeedQuestion[] = [
   {
     descriptor: "D2",
     axis: "INTERPRETACAO",
-    difficulty: "FACIL",
     prompt: "A palavra amanha indica qual ideia no texto?",
     optionA: "Tempo passado.",
     optionB: "Tempo futuro.",
@@ -55,7 +52,6 @@ const seedQuestions: SeedQuestion[] = [
   {
     descriptor: "D3",
     axis: "GENEROS_TEXTUAIS",
-    difficulty: "MEDIO",
     prompt: "O texto apresentado e um exemplo de qual genero?",
     optionA: "Bilhete.",
     optionB: "Noticia.",
@@ -66,7 +62,6 @@ const seedQuestions: SeedQuestion[] = [
   {
     descriptor: "D4",
     axis: "LINGUA_ESTUDO",
-    difficulty: "MEDIO",
     prompt: "Na frase A reuniao sera no patio, a expressao no patio indica:",
     optionA: "Tempo.",
     optionB: "Modo.",
@@ -77,7 +72,6 @@ const seedQuestions: SeedQuestion[] = [
   {
     descriptor: "D5",
     axis: "LEITURA",
-    difficulty: "MEDIO",
     prompt: "Qual informacao permite concluir que o texto e dirigido aos alunos?",
     optionA: "O uso da palavra recreio.",
     optionB: "A presenca da assinatura da diretora.",
@@ -88,7 +82,6 @@ const seedQuestions: SeedQuestion[] = [
   {
     descriptor: "D6",
     axis: "INTERPRETACAO",
-    difficulty: "DIFICIL",
     prompt: "O efeito de sentido da expressao participacao de todos e reforcar:",
     optionA: "Uma ordem sem justificativa.",
     optionB: "A importancia do envolvimento coletivo.",
@@ -135,7 +128,6 @@ async function upsertQuestion(question: SeedQuestion) {
         framework: "SAEB",
         descriptor: question.descriptor,
         axis: question.axis,
-        difficulty: question.difficulty,
         prompt: question.prompt,
         optionA: question.optionA,
         optionB: question.optionB,
@@ -143,6 +135,7 @@ async function upsertQuestion(question: SeedQuestion) {
         optionD: question.optionD,
         answer: question.answer,
       },
+      $unset: { difficulty: "" },
     },
     { upsert: true, new: true, setDefaultsOnInsert: true },
   );
@@ -240,7 +233,7 @@ async function main() {
         discipline: "LP",
         grade: "5",
         framework: "SAEB",
-        examType: "SIMULADO",
+        examType: "SIMULADO_1",
         sourceType: "QUESTION_BANK",
         status: "READY",
         examCode,

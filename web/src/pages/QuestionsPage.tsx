@@ -5,17 +5,15 @@ import { useAuth } from "@/auth/useAuth";
 import { listQuestions } from "@/api/questions";
 import { ApiError } from "@/lib/api-client";
 import { disciplineLabel } from "@/lib/discipline";
-import { difficultyLabel, type ApiDifficulty } from "@/lib/difficulty";
 import { axisLabel, CURRICULUM_AXIS_CODES, type CurriculumAxisCode } from "@/lib/curriculum-axis";
 
 export function QuestionsPage() {
   const { state } = useAuth();
   const [discipline, setDiscipline] = useState<"" | "LP" | "MAT">("");
   const [grade, setGrade] = useState<"" | "5" | "9">("");
-  const [framework, setFramework] = useState<"" | "SAEB" | "SPAS">("");
+  const [framework, setFramework] = useState<"" | "SAEB">("");
   const [descriptor, setDescriptor] = useState("");
   const [axis, setAxis] = useState<"" | CurriculumAxisCode>("");
-  const [difficulty, setDifficulty] = useState<"" | ApiDifficulty>("");
 
   const filters = useMemo(
     () => ({
@@ -24,9 +22,8 @@ export function QuestionsPage() {
       ...(framework ? { framework } : {}),
       ...(descriptor.trim() ? { descriptor: descriptor.trim() } : {}),
       ...(axis ? { axis } : {}),
-      ...(difficulty ? { difficulty } : {}),
     }),
-    [discipline, grade, framework, descriptor, axis, difficulty],
+    [discipline, grade, framework, descriptor, axis],
   );
 
   const q = useQuery({
@@ -73,18 +70,6 @@ export function QuestionsPage() {
             <select value={framework} onChange={(e) => setFramework(e.target.value as typeof framework)}>
               <option value="">Todas</option>
               <option value="SAEB">SAEB</option>
-              <option value="SPAS">SPA-S</option>
-            </select>
-          </label>
-          <label className="field">
-            Dificuldade
-            <select value={difficulty} onChange={(e) => setDifficulty(e.target.value as typeof difficulty)}>
-              <option value="">Todas</option>
-              <option value="MUITO_FACIL">Muito fácil</option>
-              <option value="FACIL">Fácil</option>
-              <option value="MEDIO">Médio</option>
-              <option value="DIFICIL">Difícil</option>
-              <option value="MUITO_DIFICIL">Muito difícil</option>
             </select>
           </label>
           <label className="field" style={{ gridColumn: "span 2" }}>
@@ -122,7 +107,6 @@ export function QuestionsPage() {
                   <th>Série</th>
                   <th>Matriz</th>
                   <th>Descritor</th>
-                  <th>Dif.</th>
                   <th>Enunciado</th>
                 </tr>
               </thead>
@@ -133,7 +117,6 @@ export function QuestionsPage() {
                     <td>{row.grade}</td>
                     <td>{row.framework}</td>
                     <td>{row.descriptor}</td>
-                    <td>{difficultyLabel(row.difficulty)}</td>
                     <td style={{ maxWidth: 320 }}>{row.prompt.slice(0, 120)}{row.prompt.length > 120 ? "…" : ""}</td>
                   </tr>
                 ))}

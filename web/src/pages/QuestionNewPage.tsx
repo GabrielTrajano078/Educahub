@@ -14,7 +14,6 @@ export function QuestionNewPage() {
     grade: "5",
     framework: "SAEB",
     descriptor: "",
-    difficulty: "MEDIO",
     prompt: "",
     optionA: "",
     optionB: "",
@@ -43,7 +42,7 @@ export function QuestionNewPage() {
     <div>
       <section className="panel">
         <h2>Nova questão (admin)</h2>
-        <p className="muted small">Campos obrigatórios alinhados ao banco SAEB/SPA-S.</p>
+        <p className="muted small">Campos obrigatórios alinhados à matriz SAEB.</p>
         {err ? (
           <p className="error" role="alert">
             {err}
@@ -81,24 +80,10 @@ export function QuestionNewPage() {
           <label className="field">
             Matriz
             <select
-              value={form.framework}
-              onChange={(e) => setForm((f) => ({ ...f, framework: e.target.value as CreateQuestionBody["framework"] }))}
+              value={form.framework ?? "SAEB"}
+              onChange={(e) => setForm((f) => ({ ...f, framework: e.target.value as "SAEB" }))}
             >
               <option value="SAEB">SAEB</option>
-              <option value="SPAS">SPA-S</option>
-            </select>
-          </label>
-          <label className="field">
-            Dificuldade
-            <select
-              value={form.difficulty}
-              onChange={(e) => setForm((f) => ({ ...f, difficulty: e.target.value as CreateQuestionBody["difficulty"] }))}
-            >
-              <option value="MUITO_FACIL">Muito fácil</option>
-              <option value="FACIL">Fácil</option>
-              <option value="MEDIO">Médio</option>
-              <option value="DIFICIL">Difícil</option>
-              <option value="MUITO_DIFICIL">Muito difícil</option>
             </select>
           </label>
           <label className="field">

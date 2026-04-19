@@ -81,13 +81,12 @@ questionsRouter.get("/", requireAuth, async (req, res, next) => {
       ...(filters.framework ? { framework: filters.framework } : {}),
       ...(filters.descriptor ? { descriptor: filters.descriptor } : {}),
       ...(filters.axis ? { axis: filters.axis } : {}),
-      ...(filters.difficulty ? { difficulty: filters.difficulty } : {}),
     };
 
     const questions = await QuestionModel.find(query)
       .sort({ createdAt: -1 })
       .limit(200)
-      .select("discipline grade framework descriptor axis difficulty prompt optionA optionB optionC optionD")
+      .select("discipline grade framework descriptor axis prompt optionA optionB optionC optionD")
       .lean();
 
     res.json(questions);
@@ -106,7 +105,6 @@ questionsRouter.post("/", requireAuth, requireRole("admin"), async (req, res, ne
       framework: data.framework,
       descriptor: data.descriptor,
       ...(data.axis ? { axis: data.axis } : {}),
-      difficulty: data.difficulty,
       prompt: data.prompt,
       optionA: data.optionA,
       optionB: data.optionB,

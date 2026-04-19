@@ -1,11 +1,10 @@
 export type Discipline = "LP" | "MAT";
 export type Grade = "5" | "9";
-export type Framework = "SAEB" | "SPAS";
-export type Difficulty = "MUITO_FACIL" | "FACIL" | "MEDIO" | "DIFICIL" | "MUITO_DIFICIL";
+export type Framework = "SAEB";
 export type AnswerOption = "A" | "B" | "C" | "D";
 export type MarkedAnswer = AnswerOption | "X" | "N/A";
 
-/** Eixos para relatórios SAEB/SPA-S (LP e MAT). */
+/** Eixos para relatórios SAEB (LP e MAT). */
 export type CurriculumAxis =
   | "LEITURA"
   | "INTERPRETACAO"
@@ -17,7 +16,13 @@ export type CurriculumAxis =
   | "ESTATISTICA"
   | "GRANDEZAS_MEDIDAS";
 
-export type ExamType = "PERSONALIZADA" | "RECUPERACAO" | "SIMULADO";
+export type ExamType =
+  | "DIAGNOSTICO_INICIAL"
+  | "SIMULADO_1"
+  | "SIMULADO_2"
+  | "SIMULADO_3"
+  | "SIMULADO_4"
+  | "DIAGNOSTICO_FINAL";
 export type ExamSourceType = "QUESTION_BANK" | "PDF_IMPORT";
 export type ExamStatus = "DRAFT" | "READY" | "APPLIED" | "CLOSED";
 export type FileStorageProvider = "LOCAL" | "S3" | "GCS";

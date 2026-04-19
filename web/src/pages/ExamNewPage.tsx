@@ -3,14 +3,24 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/useAuth";
 import { listClassrooms } from "@/api/classes";
-import { createExam, fetchSimulatedBlueprint } from "@/api/exams";
+import { createExam, fetchSimulatedBlueprint, type ExamTypeApi } from "@/api/exams";
 import { fetchQuestionSuggestions } from "@/api/questions";
 import { listSchools } from "@/api/schools";
 import { ApiError } from "@/lib/api-client";
 
-type ExamType = "PERSONALIZADA" | "RECUPERACAO" | "SIMULADO";
+/** Fluxo de montagem: diagnósticos por descritor, simulados por eixo, ou reforço (mesmo tipo de API que diagnóstico inicial). */
+type ExamFlow =
+  | "DIAGNOSTICO_INICIAL"
+  | "DIAGNOSTICO_FINAL"
+  | "SIMULADO_1"
+  | "SIMULADO_2"
+  | "SIMULADO_3"
+  | "SIMULADO_4"
+  | "REFORCO";
 
 type BlueprintRow = { descriptor: string; count: number };
+
+const FW = "SAEB" as const;
 
 export function ExamNewPage() {
   const { state } = useAuth();
@@ -19,13 +29,11 @@ export function ExamNewPage() {
   const [err, setErr] = useState<string | null>(null);
 
   const [title, setTitle] = useState("Prova diagnóstica");
-  /** Escolha explícita (admin/gestor); professor/coordenador usam apenas a escola do perfil. */
   const [schoolPick, setSchoolPick] = useState("");
   const [classroomId, setClassroomId] = useState("");
   const [discipline, setDiscipline] = useState<"LP" | "MAT">("LP");
   const [grade, setGrade] = useState<"5" | "9">("5");
-  const [framework, setFramework] = useState<"SAEB" | "SPAS">("SAEB");
-  const [examType, setExamType] = useState<ExamType>("PERSONALIZADA");
+  const [examFlow, setExamFlow] = useState<ExamFlow>("DIAGNOSTICO_INICIAL");
   const [rows, setRows] = useState<BlueprintRow[]>([{ descriptor: "D1", count: 5 }]);
 
   const user = state.status === "authenticated" ? state.user : null;
@@ -56,27 +64,29 @@ export function ExamNewPage() {
     enabled: Boolean(effectiveSchoolId),
   });
 
+  const isSimulado = examFlow.startsWith("SIMULADO_");
+
   const simQuery = useQuery({
-    queryKey: ["sim-blueprint", framework, discipline, grade],
-    queryFn: () => fetchSimulatedBlueprint({ framework, discipline, grade }),
-    enabled: examType === "SIMULADO",
+    queryKey: ["sim-blueprint", discipline, grade],
+    queryFn: () => fetchSimulatedBlueprint({ discipline, grade }),
+    enabled: isSimulado,
   });
 
   const axisBlocks = useMemo(() => {
-    if (examType !== "SIMULADO") {
+    if (!isSimulado) {
       return [];
     }
     return simQuery.data?.blueprintByAxis ?? [];
-  }, [examType, simQuery.data]);
+  }, [isSimulado, simQuery.data]);
 
   const suggestionsQuery = useQuery({
-    queryKey: ["suggestions", classroomId, discipline, grade, framework],
+    queryKey: ["suggestions", classroomId, discipline, grade],
     queryFn: () =>
       fetchQuestionSuggestions({
         classroomId,
         discipline,
         grade,
-        framework,
+        framework: FW,
       }),
     enabled: false,
   });
@@ -86,7 +96,15 @@ export function ExamNewPage() {
       if (!effectiveSchoolId || !classroomId) {
         throw new Error("Selecione escola e turma.");
       }
-      if (examType === "PERSONALIZADA") {
+
+      const examTypeForApi = (): ExamTypeApi => {
+        if (examFlow === "REFORCO") return "DIAGNOSTICO_INICIAL";
+        if (examFlow === "DIAGNOSTICO_INICIAL") return "DIAGNOSTICO_INICIAL";
+        if (examFlow === "DIAGNOSTICO_FINAL") return "DIAGNOSTICO_FINAL";
+        return examFlow;
+      };
+
+      if (examFlow === "DIAGNOSTICO_INICIAL" || examFlow === "DIAGNOSTICO_FINAL") {
         if (!rows.length || rows.some((r) => !r.descriptor.trim() || r.count < 1)) {
           throw new Error("Preencha descritores e quantidades válidas.");
         }
@@ -96,12 +114,13 @@ export function ExamNewPage() {
           title,
           discipline,
           grade,
-          framework,
-          examType: "PERSONALIZADA",
+          framework: FW,
+          examType: examTypeForApi(),
           blueprint: rows.map((r) => ({ descriptor: r.descriptor.trim(), count: r.count })),
         });
       }
-      if (examType === "SIMULADO") {
+
+      if (isSimulado) {
         if (!axisBlocks.length) {
           throw new Error("Carregue a distribuição do simulado.");
         }
@@ -111,14 +130,15 @@ export function ExamNewPage() {
           title,
           discipline,
           grade,
-          framework,
-          examType: "SIMULADO",
+          framework: FW,
+          examType: examTypeForApi(),
           blueprintByAxis: axisBlocks,
         });
       }
+
       const weak = suggestionsQuery.data?.weakDescriptors ?? [];
       if (!weak.length) {
-        throw new Error("Carregue sugestões de recuperação (descritores fracos).");
+        throw new Error("Carregue sugestões de reforço (descritores fracos).");
       }
       const blueprint = weak.slice(0, 8).map((w) => ({ descriptor: w.descriptor, count: 2 }));
       return createExam({
@@ -127,8 +147,8 @@ export function ExamNewPage() {
         title,
         discipline,
         grade,
-        framework,
-        examType: "RECUPERACAO",
+        framework: FW,
+        examType: "DIAGNOSTICO_INICIAL",
         blueprint,
       });
     },
@@ -170,10 +190,7 @@ export function ExamNewPage() {
             <label className="field" style={{ gridColumn: "1 / -1" }}>
               Escola
               <select
-                value={
-                  schoolPick ||
-                  (schoolsQuery.data?.length === 1 ? schoolsQuery.data[0]._id : "")
-                }
+                value={schoolPick || (schoolsQuery.data?.length === 1 ? schoolsQuery.data[0]._id : "")}
                 onChange={(e) => setSchoolPick(e.target.value)}
                 required
               >
@@ -217,24 +234,24 @@ export function ExamNewPage() {
               <option value="9">9º</option>
             </select>
           </label>
-          <label className="field">
-            Matriz
-            <select value={framework} onChange={(e) => setFramework(e.target.value as typeof framework)}>
-              <option value="SAEB">SAEB</option>
-              <option value="SPAS">SPA-S</option>
-            </select>
-          </label>
+          <p className="muted small" style={{ gridColumn: "1 / -1", margin: 0 }}>
+            Matriz avaliativa: <strong>SAEB</strong>
+          </p>
 
           <label className="field" style={{ gridColumn: "1 / -1" }}>
             Tipo de prova
-            <select value={examType} onChange={(e) => setExamType(e.target.value as ExamType)}>
-              <option value="PERSONALIZADA">Personalizada por habilidade (blocos descritor × quantidade)</option>
-              <option value="SIMULADO">Simulado (distribuição por eixo)</option>
-              <option value="RECUPERACAO">Recuperação (usa descritores fracos da turma)</option>
+            <select value={examFlow} onChange={(e) => setExamFlow(e.target.value as ExamFlow)}>
+              <option value="DIAGNOSTICO_INICIAL">Diagnóstico inicial (blocos por descritor)</option>
+              <option value="SIMULADO_1">Simulado 1 (distribuição por eixo)</option>
+              <option value="SIMULADO_2">Simulado 2 (distribuição por eixo)</option>
+              <option value="SIMULADO_3">Simulado 3 (distribuição por eixo)</option>
+              <option value="SIMULADO_4">Simulado 4 (distribuição por eixo)</option>
+              <option value="DIAGNOSTICO_FINAL">Diagnóstico final (blocos por descritor)</option>
+              <option value="REFORCO">Reforço (descritores fracos da turma)</option>
             </select>
           </label>
 
-          {examType === "PERSONALIZADA" ? (
+          {examFlow === "DIAGNOSTICO_INICIAL" || examFlow === "DIAGNOSTICO_FINAL" ? (
             <div style={{ gridColumn: "1 / -1" }}>
               <p className="muted small">Blocos: cada descritor com quantidade de questões sorteadas do banco.</p>
               {rows.map((row, i) => (
@@ -276,7 +293,7 @@ export function ExamNewPage() {
             </div>
           ) : null}
 
-          {examType === "SIMULADO" ? (
+          {isSimulado ? (
             <div style={{ gridColumn: "1 / -1" }}>
               {simQuery.isLoading ? <p className="muted">Carregando blueprint…</p> : null}
               {simQuery.isError ? (
@@ -291,12 +308,12 @@ export function ExamNewPage() {
                   ))}
                 </ul>
               ) : (
-                <p className="muted">A distribuição é carregada automaticamente ao escolher disciplina/ano/matriz.</p>
+                <p className="muted">A distribuição é carregada automaticamente ao escolher disciplina e ano.</p>
               )}
             </div>
           ) : null}
 
-          {examType === "RECUPERACAO" ? (
+          {examFlow === "REFORCO" ? (
             <div style={{ gridColumn: "1 / -1" }}>
               <button
                 type="button"
@@ -312,7 +329,7 @@ export function ExamNewPage() {
               {suggestionsQuery.data ? (
                 <div className="table-wrap">
                   <p className="small muted">
-                    Serão usados até 8 descritores mais fracos, 2 questões cada (ajuste futuro na API se precisar).
+                    Serão usados até 8 descritores mais fracos, 2 questões cada (ajuste futuro na API se precisar). A prova é registrada como diagnóstico inicial.
                   </p>
                   <table className="data-table">
                     <thead>

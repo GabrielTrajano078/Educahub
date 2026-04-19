@@ -1,14 +1,12 @@
 import { apiFetch } from "@/lib/api-client";
-import type { ApiDifficulty } from "@/lib/difficulty";
 
 export type QuestionListItem = {
   _id: string;
   discipline: "LP" | "MAT";
   grade: "5" | "9";
-  framework: "SAEB" | "SPAS";
+  framework: "SAEB";
   descriptor: string;
   axis?: string;
-  difficulty: ApiDifficulty;
   prompt: string;
   optionA: string;
   optionB: string;
@@ -19,10 +17,9 @@ export type QuestionListItem = {
 export async function listQuestions(params: {
   discipline?: "LP" | "MAT";
   grade?: "5" | "9";
-  framework?: "SAEB" | "SPAS";
+  framework?: "SAEB";
   descriptor?: string;
   axis?: string;
-  difficulty?: ApiDifficulty;
 }): Promise<QuestionListItem[]> {
   const sp = new URLSearchParams();
   Object.entries(params).forEach(([k, v]) => {
@@ -44,13 +41,13 @@ export async function fetchQuestionSuggestions(params: {
   classroomId: string;
   discipline: "LP" | "MAT";
   grade: "5" | "9";
-  framework: "SAEB" | "SPAS";
+  framework?: "SAEB";
 }): Promise<{ weakDescriptors: QuestionSuggestion[]; weakThreshold: number }> {
   const sp = new URLSearchParams({
     classroomId: params.classroomId,
     discipline: params.discipline,
     grade: params.grade,
-    framework: params.framework,
+    framework: params.framework ?? "SAEB",
   });
   return apiFetch(`/api/questions/suggestions?${sp}`);
 }
@@ -58,10 +55,9 @@ export async function fetchQuestionSuggestions(params: {
 export type CreateQuestionBody = {
   discipline: "LP" | "MAT";
   grade: "5" | "9";
-  framework: "SAEB" | "SPAS";
+  framework?: "SAEB";
   descriptor: string;
   axis?: string;
-  difficulty: ApiDifficulty;
   prompt: string;
   optionA: string;
   optionB: string;

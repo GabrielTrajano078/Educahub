@@ -69,9 +69,9 @@ async function buildOfficialAnswerKeyItems(examId: string) {
 examsRouter.get("/blueprint/simulado", requireAuth, async (req, res, next) => {
   try {
     const q = simulatedBlueprintQuerySchema.parse(req.query);
-    const blueprintByAxis = getSimulatedBlueprint(q.framework, q.discipline, q.grade);
+    const blueprintByAxis = getSimulatedBlueprint(q.discipline, q.grade);
     res.json({
-      framework: q.framework,
+      framework: "SAEB" as const,
       discipline: q.discipline,
       grade: q.grade,
       blueprintByAxis,
@@ -209,7 +209,6 @@ examsRouter.get("/:id", requireAuth, async (req, res, next) => {
           framework: doc.framework,
           descriptor: doc.descriptor,
           axis: doc.axis,
-          difficulty: doc.difficulty,
           prompt: doc.prompt,
           optionA: doc.optionA,
           optionB: doc.optionB,
@@ -228,7 +227,7 @@ examsRouter.get("/:id", requireAuth, async (req, res, next) => {
       schoolId: String(exam.schoolId),
       classroomId: String(exam.classroomId),
       createdBy: String(exam.createdBy),
-      examType: exam.examType ?? "PERSONALIZADA",
+      examType: exam.examType ?? "DIAGNOSTICO_INICIAL",
       sourceType: exam.sourceType ?? "QUESTION_BANK",
       status: exam.status ?? "DRAFT",
       examCode: exam.examCode ?? null,
@@ -337,7 +336,7 @@ examsRouter.post(
         discipline: data.discipline,
         grade: data.grade,
         framework: data.framework,
-        examType: data.examType ?? "PERSONALIZADA",
+        examType: data.examType ?? "DIAGNOSTICO_INICIAL",
         sourceType,
         status: data.status ?? "DRAFT",
         examCode,

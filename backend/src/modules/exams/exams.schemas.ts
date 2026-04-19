@@ -17,7 +17,7 @@ export const createExamSchema = z
     title: z.string().min(3),
     discipline: disciplineSchema,
     grade: gradeSchema,
-    framework: frameworkSchema,
+    framework: frameworkSchema.optional().default("SAEB"),
     examType: examTypeSchema.optional(),
     sourceType: examSourceTypeSchema.optional(),
     status: examStatusSchema.optional(),
@@ -64,7 +64,6 @@ export const listExamsSchema = z.object({
 });
 
 export const simulatedBlueprintQuerySchema = z.object({
-  framework: frameworkSchema,
   discipline: disciplineSchema,
   grade: gradeSchema,
 });

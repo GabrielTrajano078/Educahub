@@ -21,7 +21,7 @@ const errorResponse = {
 export const openApiDocument = {
   openapi: "3.0.3",
   info: {
-    title: "SAEB SPAS Diagnostico API",
+    title: "SAEB Diagnostico API",
     version: "1.0.0",
     description:
       "API para autenticacao, cadastro escolar, montagem de provas, geracao de cartoes-resposta e diagnosticos pedagógicos.",
@@ -144,23 +144,11 @@ export const openApiDocument = {
       },
       QuestionRequest: {
         type: "object",
-        required: [
-          "discipline",
-          "grade",
-          "framework",
-          "descriptor",
-          "difficulty",
-          "prompt",
-          "optionA",
-          "optionB",
-          "optionC",
-          "optionD",
-          "answer",
-        ],
+        required: ["discipline", "grade", "descriptor", "prompt", "optionA", "optionB", "optionC", "optionD", "answer"],
         properties: {
           discipline: { type: "string", enum: ["LP", "MAT"], example: "LP" },
           grade: { type: "string", enum: ["5", "9"], example: "5" },
-          framework: { type: "string", enum: ["SAEB", "SPAS"], example: "SAEB" },
+          framework: { type: "string", enum: ["SAEB"], example: "SAEB", default: "SAEB" },
           descriptor: { type: "string", example: "D1" },
           axis: {
             type: "string",
@@ -177,11 +165,6 @@ export const openApiDocument = {
             ],
             example: "LEITURA",
           },
-          difficulty: {
-            type: "string",
-            enum: ["MUITO_FACIL", "FACIL", "MEDIO", "DIFICIL", "MUITO_DIFICIL"],
-            example: "FACIL",
-          },
           prompt: { type: "string", example: "Qual e a finalidade principal do texto apresentado?" },
           optionA: { type: "string", example: "Contar uma historia." },
           optionB: { type: "string", example: "Dar uma instrucao." },
@@ -192,18 +175,25 @@ export const openApiDocument = {
       },
       ExamRequest: {
         type: "object",
-        required: ["schoolId", "classroomId", "title", "discipline", "grade", "framework"],
+        required: ["schoolId", "classroomId", "title", "discipline", "grade"],
         properties: {
           schoolId: objectId,
           classroomId: objectId,
           title: { type: "string", example: "Simulado Diagnostico LP 5o Ano" },
           discipline: { type: "string", enum: ["LP", "MAT"], example: "LP" },
           grade: { type: "string", enum: ["5", "9"], example: "5" },
-          framework: { type: "string", enum: ["SAEB", "SPAS"], example: "SAEB" },
+          framework: { type: "string", enum: ["SAEB"], example: "SAEB", default: "SAEB" },
           examType: {
             type: "string",
-            enum: ["PERSONALIZADA", "RECUPERACAO", "SIMULADO"],
-            example: "SIMULADO",
+            enum: [
+              "DIAGNOSTICO_INICIAL",
+              "SIMULADO_1",
+              "SIMULADO_2",
+              "SIMULADO_3",
+              "SIMULADO_4",
+              "DIAGNOSTICO_FINAL",
+            ],
+            example: "SIMULADO_1",
           },
           sourceType: {
             type: "string",
@@ -551,17 +541,9 @@ export const openApiDocument = {
         parameters: [
           { name: "discipline", in: "query", schema: { type: "string", enum: ["LP", "MAT"] } },
           { name: "grade", in: "query", schema: { type: "string", enum: ["5", "9"] } },
-          { name: "framework", in: "query", schema: { type: "string", enum: ["SAEB", "SPAS"] } },
+          { name: "framework", in: "query", schema: { type: "string", enum: ["SAEB"] } },
           { name: "descriptor", in: "query", schema: { type: "string" } },
           { name: "axis", in: "query", schema: { type: "string" } },
-          {
-            name: "difficulty",
-            in: "query",
-            schema: {
-              type: "string",
-              enum: ["MUITO_FACIL", "FACIL", "MEDIO", "DIFICIL", "MUITO_DIFICIL"],
-            },
-          },
         ],
         responses: {
           200: { description: "Lista de questoes" },
@@ -600,7 +582,7 @@ export const openApiDocument = {
           { name: "classroomId", in: "query", required: true, schema: objectId },
           { name: "discipline", in: "query", required: true, schema: { type: "string", enum: ["LP", "MAT"] } },
           { name: "grade", in: "query", required: true, schema: { type: "string", enum: ["5", "9"] } },
-          { name: "framework", in: "query", required: true, schema: { type: "string", enum: ["SAEB", "SPAS"] } },
+          { name: "framework", in: "query", schema: { type: "string", enum: ["SAEB"], default: "SAEB" } },
           { name: "weakThreshold", in: "query", schema: { type: "number", example: 60 } },
           { name: "limit", in: "query", schema: { type: "integer", example: 10 } },
         ],
@@ -662,7 +644,6 @@ export const openApiDocument = {
         summary: "Consulta blueprint padrao de simulado",
         security: [{ bearerAuth: [] }],
         parameters: [
-          { name: "framework", in: "query", required: true, schema: { type: "string", enum: ["SAEB", "SPAS"] } },
           { name: "discipline", in: "query", required: true, schema: { type: "string", enum: ["LP", "MAT"] } },
           { name: "grade", in: "query", required: true, schema: { type: "string", enum: ["5", "9"] } },
         ],

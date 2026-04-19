@@ -7,7 +7,7 @@ export type ExamListItem = {
   title: string;
   discipline: "LP" | "MAT";
   grade: "5" | "9";
-  framework: "SAEB" | "SPAS";
+  framework: "SAEB";
   examType?: string;
   status?: string;
   examCode?: string;
@@ -39,7 +39,6 @@ export type ExamDetail = ExamListItem & {
     framework?: string;
     descriptor?: string;
     axis?: string;
-    difficulty?: string;
     prompt?: string;
     optionA?: string;
     optionB?: string;
@@ -55,14 +54,22 @@ export async function fetchExam(id: string): Promise<ExamDetail> {
   return apiFetch(`/api/exams/${id}`);
 }
 
+export type ExamTypeApi =
+  | "DIAGNOSTICO_INICIAL"
+  | "SIMULADO_1"
+  | "SIMULADO_2"
+  | "SIMULADO_3"
+  | "SIMULADO_4"
+  | "DIAGNOSTICO_FINAL";
+
 export type CreateExamBody = {
   schoolId: string;
   classroomId: string;
   title: string;
   discipline: "LP" | "MAT";
   grade: "5" | "9";
-  framework: "SAEB" | "SPAS";
-  examType?: "PERSONALIZADA" | "RECUPERACAO" | "SIMULADO";
+  framework?: "SAEB";
+  examType?: ExamTypeApi;
   sourceType?: "QUESTION_BANK" | "PDF_IMPORT";
   status?: string;
   questionCount?: number;
@@ -85,7 +92,6 @@ export type SimulatedBlueprintResponse = {
 };
 
 export async function fetchSimulatedBlueprint(params: {
-  framework: "SAEB" | "SPAS";
   discipline: "LP" | "MAT";
   grade: "5" | "9";
 }): Promise<SimulatedBlueprintResponse> {

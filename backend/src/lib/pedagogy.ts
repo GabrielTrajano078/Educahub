@@ -15,5 +15,5 @@ export function suggestIntervention(descriptor: string, axis?: string | null): s
   if (axis === "GENEROS_TEXTUAIS") {
     return `Variar gêneros e praticar identificação de finalidade e estrutura (${descriptor}).`;
   }
-  return `Planejar revisão sistemática do descritor ${descriptor} com base na matriz SAEB/SPA-S.`;
+  return `Planejar revisão sistemática do descritor ${descriptor} com base na matriz SAEB.`;
 }

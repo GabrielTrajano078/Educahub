@@ -11,8 +11,14 @@ interface ExamDocument {
   title: string;
   discipline: "LP" | "MAT";
   grade: "5" | "9";
-  framework: "SAEB" | "SPAS";
-  examType: "PERSONALIZADA" | "RECUPERACAO" | "SIMULADO";
+  framework: "SAEB";
+  examType:
+    | "DIAGNOSTICO_INICIAL"
+    | "SIMULADO_1"
+    | "SIMULADO_2"
+    | "SIMULADO_3"
+    | "SIMULADO_4"
+    | "DIAGNOSTICO_FINAL";
   sourceType: "QUESTION_BANK" | "PDF_IMPORT";
   status: "DRAFT" | "READY" | "APPLIED" | "CLOSED";
   /** Código impresso no cartão-resposta. */
@@ -42,12 +48,19 @@ const examSchema = new Schema<ExamDocument>(
     title: { type: String, required: true },
     discipline: { type: String, required: true, enum: ["LP", "MAT"], index: true },
     grade: { type: String, required: true, enum: ["5", "9"], index: true },
-    framework: { type: String, required: true, enum: ["SAEB", "SPAS"], index: true },
+    framework: { type: String, required: true, enum: ["SAEB"], index: true },
     examType: {
       type: String,
       required: true,
-      enum: ["PERSONALIZADA", "RECUPERACAO", "SIMULADO"],
-      default: "PERSONALIZADA",
+      enum: [
+        "DIAGNOSTICO_INICIAL",
+        "SIMULADO_1",
+        "SIMULADO_2",
+        "SIMULADO_3",
+        "SIMULADO_4",
+        "DIAGNOSTICO_FINAL",
+      ],
+      default: "DIAGNOSTICO_INICIAL",
       index: true,
     },
     sourceType: {

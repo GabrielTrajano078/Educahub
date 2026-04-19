@@ -3,11 +3,10 @@ import { Schema, model } from "mongoose";
 interface QuestionDocument {
   discipline: "LP" | "MAT";
   grade: "5" | "9";
-  framework: "SAEB" | "SPAS";
+  framework: "SAEB";
   descriptor: string;
   /** Eixo curricular para relatórios (desempenho por eixo). */
   axis?: string;
-  difficulty: "MUITO_FACIL" | "FACIL" | "MEDIO" | "DIFICIL" | "MUITO_DIFICIL";
   prompt: string;
   optionA: string;
   optionB: string;
@@ -20,15 +19,9 @@ const questionSchema = new Schema<QuestionDocument>(
   {
     discipline: { type: String, required: true, enum: ["LP", "MAT"], index: true },
     grade: { type: String, required: true, enum: ["5", "9"], index: true },
-    framework: { type: String, required: true, enum: ["SAEB", "SPAS"], index: true },
+    framework: { type: String, required: true, enum: ["SAEB"], index: true },
     descriptor: { type: String, required: true, index: true },
     axis: { type: String, index: true },
-    difficulty: {
-      type: String,
-      required: true,
-      enum: ["MUITO_FACIL", "FACIL", "MEDIO", "DIFICIL", "MUITO_DIFICIL"],
-      index: true,
-    },
     prompt: { type: String, required: true },
     optionA: { type: String, required: true },
     optionB: { type: String, required: true },
@@ -44,7 +37,6 @@ questionSchema.index({
   grade: 1,
   framework: 1,
   descriptor: 1,
-  difficulty: 1,
 });
 questionSchema.index({ discipline: 1, grade: 1, framework: 1, axis: 1 });
 
