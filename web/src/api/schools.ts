@@ -2,8 +2,11 @@ import { apiFetch } from "@/lib/api-client";
 import { schoolSchema, type School } from "@/schemas/school";
 import { z } from "zod";
 
-export async function listSchools(): Promise<School[]> {
-  const data = await apiFetch<unknown>("/api/schools");
+export async function listSchools(params?: { nameContains?: string }): Promise<School[]> {
+  const sp = new URLSearchParams();
+  if (params?.nameContains?.trim()) sp.set("nameContains", params.nameContains.trim());
+  const q = sp.toString();
+  const data = await apiFetch<unknown>(`/api/schools${q ? `?${q}` : ""}`);
   return z.array(schoolSchema).parse(data);
 }
 

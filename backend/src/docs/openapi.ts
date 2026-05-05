@@ -425,6 +425,7 @@ export const openApiDocument = {
         tags: ["Schools"],
         summary: "Lista escolas",
         security: [{ bearerAuth: [] }],
+        parameters: [{ name: "nameContains", in: "query", schema: { type: "string", maxLength: 200 } }],
         responses: {
           200: {
             description: "Lista de escolas",

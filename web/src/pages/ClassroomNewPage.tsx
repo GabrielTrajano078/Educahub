@@ -5,6 +5,7 @@ import { useAuth } from "@/auth/useAuth";
 import { createClassroom } from "@/api/classes";
 import { listSchools } from "@/api/schools";
 import { ApiError } from "@/lib/api-client";
+import { FeedbackModal, type FeedbackModalState } from "@/components/ui/FeedbackModal";
 import { NewClassroomForm } from "./classes/NewClassroomForm";
 
 export function ClassroomNewPage() {
@@ -15,6 +16,8 @@ export function ClassroomNewPage() {
   const [name, setName] = useState("");
   const [grade, setGrade] = useState<"5" | "9">("5");
   const [formError, setFormError] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<FeedbackModalState | null>(null);
+  const [pendingNavigate, setPendingNavigate] = useState<string | null>(null);
 
   const user = state.status === "authenticated" ? state.user : null;
   const isCoord = user?.role === "coordenador";
@@ -22,7 +25,7 @@ export function ClassroomNewPage() {
 
   const schoolsQ = useQuery({
     queryKey: ["schools"],
-    queryFn: listSchools,
+    queryFn: () => listSchools(),
     enabled: state.status === "authenticated" && Boolean(needsSchoolPicker),
   });
 
@@ -36,10 +39,14 @@ export function ClassroomNewPage() {
     mutationFn: createClassroom,
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["classes"] });
-      navigate("/turmas");
+      setPendingNavigate("/turmas");
+      setFeedback({ variant: "success", message: "Turma cadastrada com sucesso." });
     },
     onError: (err: unknown) => {
-      setFormError(err instanceof ApiError ? err.message : "Não foi possível cadastrar.");
+      setFeedback({
+        variant: "error",
+        message: err instanceof ApiError ? err.message : "Não foi possível cadastrar.",
+      });
     },
   });
 
@@ -48,12 +55,12 @@ export function ClassroomNewPage() {
     setFormError(null);
     const sid = schoolId.trim();
     if (!sid) {
-      setFormError("Selecione a escola.");
+      setFeedback({ variant: "warning", message: "Selecione a escola." });
       return;
     }
     const n = name.trim();
     if (!n) {
-      setFormError("Informe o nome da turma.");
+      setFeedback({ variant: "warning", message: "Informe o nome da turma." });
       return;
     }
     createM.mutate({ schoolId: sid, name: n, grade });
@@ -63,10 +70,20 @@ export function ClassroomNewPage() {
     return null;
   }
 
+  function handleCloseFeedback() {
+    setFeedback(null);
+    if (pendingNavigate) {
+      const to = pendingNavigate;
+      setPendingNavigate(null);
+      navigate(to);
+    }
+  }
+
   const schools = schoolsQ.data ?? [];
 
   return (
     <div>
+      <FeedbackModal feedback={feedback} onClose={handleCloseFeedback} />
       <section className="panel">
         <h2>Nova turma</h2>
         <p className="muted small">

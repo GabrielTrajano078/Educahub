@@ -3,7 +3,7 @@ import { gradeSchema, objectIdSchema } from "../common/schemas";
 
 export const createClassroomSchema = z.object({
   schoolId: objectIdSchema,
-  name: z.string().min(1),
+  name: z.string().trim().min(1),
   grade: gradeSchema,
 });
 

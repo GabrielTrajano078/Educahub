@@ -5,6 +5,7 @@ import { listClassrooms } from "@/api/classes";
 import { listSchools } from "@/api/schools";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { FeedbackMessage } from "@/components/ui/FeedbackMessage";
 import { ClassesListFilters } from "./classes/ClassesListFilters";
 import { ClassroomImportPanel } from "./classes/ClassroomImportPanel";
 import {
@@ -30,7 +31,7 @@ export function ClassesPage() {
 
   const schoolsQ = useQuery({
     queryKey: ["schools"],
-    queryFn: listSchools,
+    queryFn: () => listSchools(),
     enabled: state.status === "authenticated" && Boolean(needsSchoolPicker),
   });
 
@@ -134,9 +135,9 @@ export function ClassesPage() {
         {canCreate ? (
           <>
             {importError ? (
-              <p className="error" role="alert" style={{ marginTop: "0.75rem", maxWidth: 480 }}>
+              <FeedbackMessage variant="error" className="small" role="alert">
                 {importError}
-              </p>
+              </FeedbackMessage>
             ) : null}
             <ClassroomImportPanel
               importBusy={importBusy}

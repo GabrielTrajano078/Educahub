@@ -23,7 +23,7 @@ export function DashboardHomePage() {
   });
   const schoolsQuery = useQuery({
     queryKey: ["schools"],
-    queryFn: listSchools,
+    queryFn: () => listSchools(),
     enabled: state.status === "authenticated" && (state.user.role === "admin" || state.user.role === "gestor"),
   });
 

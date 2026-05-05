@@ -5,3 +5,7 @@ export const createSchoolSchema = z.object({
   city: z.string().min(2).optional(),
   municipalityCode: z.string().min(2).optional(),
 });
+
+export const listSchoolsSchema = z.object({
+  nameContains: z.string().trim().max(200).optional(),
+});

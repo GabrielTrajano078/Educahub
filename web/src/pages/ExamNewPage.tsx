@@ -6,6 +6,7 @@ import { listClassrooms } from "@/api/classes";
 import { createExam, fetchSimulatedBlueprint, type ExamTypeApi } from "@/api/exams";
 import { fetchQuestionSuggestions } from "@/api/questions";
 import { listSchools } from "@/api/schools";
+import { FeedbackModal, type FeedbackModalState } from "@/components/ui/FeedbackModal";
 import { ApiError } from "@/lib/api-client";
 import { copy } from "@/lib/copy";
 import { formatApiError } from "@/lib/format-api-error";
@@ -28,7 +29,8 @@ export function ExamNewPage() {
   const { state } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const [err, setErr] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<FeedbackModalState | null>(null);
+  const [pendingNavigate, setPendingNavigate] = useState<string | null>(null);
 
   const [title, setTitle] = useState("Prova diagnóstica");
   const [schoolPick, setSchoolPick] = useState("");
@@ -42,7 +44,7 @@ export function ExamNewPage() {
 
   const schoolsQuery = useQuery({
     queryKey: ["schools"],
-    queryFn: listSchools,
+    queryFn: () => listSchools(),
     enabled: !!user && (user.role === "admin" || user.role === "gestor"),
   });
 
@@ -156,10 +158,11 @@ export function ExamNewPage() {
     },
     onSuccess: (data) => {
       void qc.invalidateQueries({ queryKey: ["exams"] });
-      navigate(`/provas/${data.id}`);
+      setPendingNavigate(`/provas/${data.id}`);
+      setFeedback({ variant: "success", message: "Prova cadastrada com sucesso." });
     },
     onError: (e: unknown) => {
-      setErr(formatApiError(e, copy.examCreateError));
+      setFeedback({ variant: "error", message: formatApiError(e, copy.examCreateError) });
     },
   });
 
@@ -167,20 +170,25 @@ export function ExamNewPage() {
     return null;
   }
 
+  function handleCloseFeedback() {
+    setFeedback(null);
+    if (pendingNavigate) {
+      const to = pendingNavigate;
+      setPendingNavigate(null);
+      navigate(to);
+    }
+  }
+
   const authUser = state.user;
 
   return (
     <div>
+      <FeedbackModal feedback={feedback} onClose={handleCloseFeedback} />
       <section className="panel">
         <h2>Nova prova</h2>
         <p className="muted small">
           <Link to="/provas">← Voltar</Link>
         </p>
-        {err ? (
-          <p className="error" role="alert">
-            {err}
-          </p>
-        ) : null}
 
         <div className="form-grid" style={{ maxWidth: 720, marginTop: "1rem" }}>
           <label className="field" style={{ gridColumn: "1 / -1" }}>
@@ -329,7 +337,7 @@ export function ExamNewPage() {
                 className="ghost"
                 disabled={!classroomId || suggestionsQuery.isFetching}
                 onClick={() => {
-                  setErr(null);
+                  setFeedback(null);
                   void suggestionsQuery.refetch();
                 }}
               >

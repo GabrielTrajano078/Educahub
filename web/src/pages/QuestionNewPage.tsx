@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { createQuestion, type CreateQuestionBody } from "@/api/questions";
 import { SelectField, type SelectFieldOption } from "@/components/SelectField";
 import { Button } from "@/components/ui/Button";
+import { FeedbackModal, type FeedbackModalState } from "@/components/ui/FeedbackModal";
 import { ApiError } from "@/lib/api-client";
 import { axisLabel, CURRICULUM_AXIS_CODES } from "@/lib/curriculum-axis";
 
@@ -32,7 +33,8 @@ const AXIS_OPTIONS: SelectFieldOption[] = CURRICULUM_AXIS_CODES.map((code) => ({
 export function QuestionNewPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const [err, setErr] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<FeedbackModalState | null>(null);
+  const [pendingNavigate, setPendingNavigate] = useState<string | null>(null);
   const [form, setForm] = useState<CreateQuestionBody>({
     discipline: "LP",
     grade: "5",
@@ -55,29 +57,34 @@ export function QuestionNewPage() {
       }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["questions"] });
-      navigate("/questoes");
+      setPendingNavigate("/questoes");
+      setFeedback({ variant: "success", message: "Questão cadastrada com sucesso." });
     },
     onError: (e: unknown) => {
-      setErr(e instanceof ApiError ? e.message : "Falha ao criar.");
+      setFeedback({ variant: "error", message: e instanceof ApiError ? e.message : "Falha ao criar." });
     },
   });
 
+  function handleCloseFeedback() {
+    setFeedback(null);
+    if (pendingNavigate) {
+      const to = pendingNavigate;
+      setPendingNavigate(null);
+      navigate(to);
+    }
+  }
+
   return (
     <div>
+      <FeedbackModal feedback={feedback} onClose={handleCloseFeedback} />
       <section className="panel">
         <h2>Nova questão (admin)</h2>
         <p className="muted small">Campos obrigatórios alinhados à matriz SAEB.</p>
-        {err ? (
-          <p className="error" role="alert">
-            {err}
-          </p>
-        ) : null}
         <form
           className="form-grid"
           style={{ maxWidth: 640, marginTop: "1rem" }}
           onSubmit={(e) => {
             e.preventDefault();
-            setErr(null);
             m.mutate();
           }}
         >

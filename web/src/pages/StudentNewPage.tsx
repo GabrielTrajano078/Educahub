@@ -5,6 +5,7 @@ import { useAuth } from "@/auth/useAuth";
 import { listClassrooms } from "@/api/classes";
 import { createStudent } from "@/api/students";
 import { ApiError } from "@/lib/api-client";
+import { FeedbackModal, type FeedbackModalState } from "@/components/ui/FeedbackModal";
 import { NewStudentForm, type NewStudentFormPayload } from "./students/NewStudentForm";
 
 export function StudentNewPage() {
@@ -16,6 +17,8 @@ export function StudentNewPage() {
   const [fullName, setFullName] = useState("");
   const [registrationCode, setRegistrationCode] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<FeedbackModalState | null>(null);
+  const [pendingNavigate, setPendingNavigate] = useState<string | null>(null);
 
   const user = state.status === "authenticated" ? state.user : null;
 
@@ -40,13 +43,14 @@ export function StudentNewPage() {
     },
     onSuccess: (_data, variables) => {
       void qc.invalidateQueries({ queryKey: ["students"] });
-      navigate(`/alunos?classroomId=${encodeURIComponent(variables.classroomId)}`);
+      setPendingNavigate(`/alunos?classroomId=${encodeURIComponent(variables.classroomId)}`);
+      setFeedback({ variant: "success", message: "Aluno cadastrado com sucesso." });
     },
     onError: (e: unknown) => {
       let msg = "Erro.";
       if (e instanceof ApiError) msg = e.message;
       else if (e instanceof Error) msg = e.message;
-      setFormError(msg);
+      setFeedback({ variant: "error", message: msg });
     },
   });
 
@@ -54,13 +58,13 @@ export function StudentNewPage() {
     e.preventDefault();
     setFormError(null);
     if (!classroomId.trim()) {
-      setFormError("Selecione a turma.");
+      setFeedback({ variant: "warning", message: "Selecione a turma." });
       return;
     }
     const fn = fullName.trim();
     const rc = registrationCode.trim();
     if (!fn || !rc) {
-      setFormError("Preencha nome e matrícula.");
+      setFeedback({ variant: "warning", message: "Preencha nome e matrícula." });
       return;
     }
     createM.mutate({ classroomId, fullName: fn, registrationCode: rc });
@@ -70,6 +74,15 @@ export function StudentNewPage() {
     return null;
   }
 
+  function handleCloseFeedback() {
+    setFeedback(null);
+    if (pendingNavigate) {
+      const to = pendingNavigate;
+      setPendingNavigate(null);
+      navigate(to);
+    }
+  }
+
   const classroomOptions = (classesQ.data ?? []).map((c) => ({
     value: c._id,
     label: `${c.name} (${c.grade}º)`,
@@ -77,6 +90,7 @@ export function StudentNewPage() {
 
   return (
     <div>
+      <FeedbackModal feedback={feedback} onClose={handleCloseFeedback} />
       <section className="panel">
         <h2>Novo aluno</h2>
         <p className="muted small">

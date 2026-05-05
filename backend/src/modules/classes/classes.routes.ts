@@ -8,6 +8,10 @@ import { createClassroomSchema, listClassroomsSchema } from "./classes.schemas";
 
 export const classesRouter = Router();
 
+function isDuplicateKeyError(error: unknown): error is { code: number } {
+  return Boolean(error && typeof error === "object" && "code" in error && (error as { code?: number }).code === 11000);
+}
+
 classesRouter.get("/", requireAuth, async (req, res, next) => {
   try {
     const filters = listClassroomsSchema.parse(req.query);
@@ -66,6 +70,10 @@ classesRouter.post(
       const classroom = await ClassroomModel.create(data);
       res.status(201).json({ id: String(classroom._id) });
     } catch (error) {
+      if (isDuplicateKeyError(error)) {
+        res.status(409).json({ message: "Já existe turma com este nome para a escola informada." });
+        return;
+      }
       next(error);
     }
   },

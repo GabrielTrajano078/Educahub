@@ -25,7 +25,7 @@ export function ClassroomPage() {
   });
   const schoolsQ = useQuery({
     queryKey: ["schools"],
-    queryFn: listSchools,
+    queryFn: () => listSchools(),
     enabled:
       Boolean(classroomId) &&
       state.status === "authenticated" &&

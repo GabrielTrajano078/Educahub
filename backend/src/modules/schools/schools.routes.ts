@@ -1,19 +1,29 @@
 import { Router } from "express";
+import { escapeRegex } from "../../lib/escape-regex";
 import { requireAuth, requireRole } from "../../middlewares/auth";
 import { SchoolModel } from "./school.model";
-import { createSchoolSchema } from "./schools.schemas";
+import { createSchoolSchema, listSchoolsSchema } from "./schools.schemas";
 
 export const schoolsRouter = Router();
 
 schoolsRouter.get("/", requireAuth, requireRole("admin", "gestor"), async (req, res, next) => {
   try {
-    let query: Record<string, unknown> = {};
+    const filters = listSchoolsSchema.parse(req.query);
+    const nameTrim = filters.nameContains?.trim();
+    const query: Record<string, unknown> = {
+      ...(nameTrim
+        ? {
+            name: { $regex: escapeRegex(nameTrim), $options: "i" },
+          }
+        : {}),
+    };
+
     if (req.user!.role === "gestor") {
       if (!req.user!.municipalityCode) {
         res.status(403).json({ message: "Gestor sem municipio vinculado." });
         return;
       }
-      query = { municipalityCode: req.user!.municipalityCode };
+      query.municipalityCode = req.user!.municipalityCode;
     }
 
     const schools = await SchoolModel.find(query).sort({ name: 1 }).lean();

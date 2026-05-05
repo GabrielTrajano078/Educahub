@@ -3,6 +3,7 @@ import type { UseMutationResult } from "@tanstack/react-query";
 import type { CreateClassroomBody } from "@/api/classes";
 import { SelectField } from "@/components/SelectField";
 import { Button } from "@/components/ui/Button";
+import { FeedbackMessage } from "@/components/ui/FeedbackMessage";
 import type { School } from "@/schemas/school";
 import type { User } from "@/schemas/auth";
 
@@ -75,9 +76,9 @@ export function NewClassroomForm({
         disabled={coordBlocked}
       />
       {formError ? (
-        <p className="error" role="alert" style={{ gridColumn: "1 / -1" }}>
+        <FeedbackMessage variant="error" className="field--span-2">
           {formError}
-        </p>
+        </FeedbackMessage>
       ) : null}
       <div className="row-actions" style={{ gridColumn: "1 / -1" }}>
         <Button type="submit" variant="primary" disabled={createM.isPending || coordBlocked}>

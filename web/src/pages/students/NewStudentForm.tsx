@@ -2,6 +2,7 @@ import type { FormEvent } from "react";
 import type { UseMutationResult } from "@tanstack/react-query";
 import { SelectField } from "@/components/SelectField";
 import { Button } from "@/components/ui/Button";
+import { FeedbackMessage } from "@/components/ui/FeedbackMessage";
 
 export type NewStudentFormPayload = Readonly<{
   classroomId: string;
@@ -54,9 +55,9 @@ export function NewStudentForm({
         <input value={registrationCode} onChange={(e) => onRegistrationCodeChange(e.target.value)} required />
       </label>
       {formError ? (
-        <p className="error" role="alert" style={{ gridColumn: "1 / -1" }}>
+        <FeedbackMessage variant="error" className="field--span-2">
           {formError}
-        </p>
+        </FeedbackMessage>
       ) : null}
       <div className="row-actions" style={{ gridColumn: "1 / -1" }}>
         <Button type="submit" variant="primary" disabled={createM.isPending || !classroomId}>

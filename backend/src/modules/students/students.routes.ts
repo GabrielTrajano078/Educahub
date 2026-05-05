@@ -13,6 +13,10 @@ import { createStudentSchema, listStudentsSchema } from "./students.schemas";
 
 export const studentsRouter = Router();
 
+function isDuplicateKeyError(error: unknown): error is { code: number } {
+  return Boolean(error && typeof error === "object" && "code" in error && (error as { code?: number }).code === 11000);
+}
+
 async function classroomIdsForGrade(
   grade: "5" | "9",
   filtersSchoolId: string | undefined,
@@ -144,6 +148,10 @@ studentsRouter.post(
       const student = await StudentModel.create(data);
       res.status(201).json({ id: String(student._id) });
     } catch (error) {
+      if (isDuplicateKeyError(error)) {
+        res.status(409).json({ message: "Já existe aluno com este código de matrícula." });
+        return;
+      }
       next(error);
     }
   },

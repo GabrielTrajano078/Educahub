@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { downloadClassroomTemplate } from "@/lib/excel-import";
 import { Button } from "@/components/ui/Button";
+import { FeedbackMessage } from "@/components/ui/FeedbackMessage";
 import type { ClassroomImportReport } from "./classroom-import-workbook";
 
 export type ClassroomImportPanelProps = {
@@ -54,15 +55,19 @@ export function ClassroomImportPanel({
 function ImportReportView({ report }: { report: ClassroomImportReport }) {
   return (
     <div className="import-report" role="status">
-      <p style={{ margin: "0.75rem 0 0" }}>
-        <span className="success">{report.ok} turma(s) criada(s).</span>
-        {report.skipped > 0 ? <span className="muted"> {report.skipped} linha(s) em branco ignorada(s).</span> : null}
-      </p>
+      <FeedbackMessage variant="success" className="small" role="status">
+        {report.ok} turma(s) criada(s).
+      </FeedbackMessage>
+      {report.skipped > 0 ? (
+        <FeedbackMessage variant="warning" className="small" role="status">
+          {report.skipped} linha(s) em branco ignorada(s).
+        </FeedbackMessage>
+      ) : null}
       {report.errors.length === 0 ? null : (
         <>
-          <p className="error" style={{ margin: "0.5rem 0 0" }}>
+          <FeedbackMessage variant="error" className="small" role="alert">
             {report.errors.length} linha(s) com problema:
-          </p>
+          </FeedbackMessage>
           <ul className="small muted" style={{ margin: "0.35rem 0 0" }}>
             {report.errors.slice(0, 25).map((e) => (
               <li key={`${e.line}-${e.message}`}>

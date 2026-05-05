@@ -7,6 +7,7 @@ import { createStudent, deleteStudent, listStudents } from "@/api/students";
 import { listSchools } from "@/api/schools";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { FeedbackMessage } from "@/components/ui/FeedbackMessage";
 import { useConfirm } from "@/components/ui/ConfirmDialog";
 import { ApiError } from "@/lib/api-client";
 import { parseStudentRow, readExcelFirstSheet } from "@/lib/excel-import";
@@ -36,7 +37,7 @@ export function StudentsPage() {
 
   const schoolsQ = useQuery({
     queryKey: ["schools"],
-    queryFn: listSchools,
+    queryFn: () => listSchools(),
     enabled: Boolean(needsSchoolPicker && user),
   });
 
@@ -197,9 +198,9 @@ export function StudentsPage() {
         {canCreate ? (
           <>
             {importError ? (
-              <p className="error" role="alert" style={{ marginTop: "0.75rem", maxWidth: 480 }}>
+              <FeedbackMessage variant="error" className="small" role="alert">
                 {importError}
-              </p>
+              </FeedbackMessage>
             ) : null}
             <StudentImportPanel
               importBusy={importBusy}
