@@ -1,7 +1,8 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { type FormEvent, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/useAuth";
+import { fetchMunicipioByIbgeCode, searchMunicipiosByName, type IbgeMunicipioOption } from "@/api/ibge";
 import { createSchool, type CreateSchoolBody } from "@/api/schools";
 import { ApiError } from "@/lib/api-client";
 import { FeedbackModal, type FeedbackModalState } from "@/components/ui/FeedbackModal";
@@ -19,6 +20,8 @@ export function SchoolNewPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<FeedbackModalState | null>(null);
   const [pendingNavigate, setPendingNavigate] = useState<string | null>(null);
+  const [cityQuery, setCityQuery] = useState("");
+  const [showCitySuggestions, setShowCitySuggestions] = useState(false);
 
   const user = state.status === "authenticated" ? state.user : null;
   const isAdmin = user?.role === "admin";
@@ -37,6 +40,33 @@ export function SchoolNewPage() {
         message: err instanceof ApiError ? err.message : "Não foi possível cadastrar.",
       });
     },
+  });
+
+  const lookupMunicipioM = useMutation({
+    mutationFn: fetchMunicipioByIbgeCode,
+    onSuccess: (data) => {
+      setForm((prev) => ({ ...prev, city: data.nome }));
+    },
+    onError: (err: unknown) => {
+      setFeedback({
+        variant: "error",
+        message: err instanceof Error ? err.message : "Não foi possível consultar o IBGE.",
+      });
+    },
+  });
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setCityQuery(form.city.trim());
+    }, 280);
+    return () => clearTimeout(t);
+  }, [form.city]);
+
+  const citySearchQ = useQuery({
+    queryKey: ["ibge", "city-search", cityQuery],
+    queryFn: () => searchMunicipiosByName(cityQuery),
+    enabled: Boolean(isAdmin && cityQuery.length >= 3),
+    staleTime: 5 * 60 * 1000,
   });
 
   function handleSubmit(e: FormEvent) {
@@ -62,6 +92,34 @@ export function SchoolNewPage() {
     }
 
     createM.mutate(body);
+  }
+
+  function handleLookupByCode() {
+    const code = form.municipalityCode.trim();
+    if (code.length !== 7) {
+      return;
+    }
+    lookupMunicipioM.mutate(code);
+  }
+
+  function handleSelectCitySuggestion(option: IbgeMunicipioOption) {
+    setForm((prev) => ({ ...prev, city: option.nome, municipalityCode: option.codigo }));
+    setShowCitySuggestions(false);
+  }
+
+  function handleCityChange(value: string) {
+    setForm((prev) => ({ ...prev, city: value }));
+    if (isAdmin) {
+      setShowCitySuggestions(true);
+    }
+  }
+
+  function handleCityFocus() {
+    setShowCitySuggestions(true);
+  }
+
+  function handleCityBlur() {
+    setTimeout(() => setShowCitySuggestions(false), 120);
   }
 
   if (state.status !== "authenticated" || !user) {
@@ -92,6 +150,15 @@ export function SchoolNewPage() {
           gestorMunicipalityCode={user.role === "gestor" ? user.municipalityCode : null}
           form={form}
           onFormChange={setForm}
+          onCityChange={handleCityChange}
+          citySuggestions={citySearchQ.data ?? []}
+          showCitySuggestions={showCitySuggestions}
+          citySuggestionsLoading={citySearchQ.isFetching}
+          onSelectCitySuggestion={handleSelectCitySuggestion}
+          onCityFocus={handleCityFocus}
+          onCityBlur={handleCityBlur}
+          onMunicipalityCodeBlur={handleLookupByCode}
+          lookupBusy={lookupMunicipioM.isPending}
           formError={formError}
           createM={createM}
           onSubmit={handleSubmit}
