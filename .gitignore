@@ -7,3 +7,5 @@ web/dist/
 .DS_Store
 .env
 backend/uploads/
+backend/reports/mutation/
+backend/.stryker-tmp/
