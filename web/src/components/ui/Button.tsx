@@ -1,10 +1,13 @@
 import {
   cloneElement,
+  type AriaAttributes,
   type ButtonHTMLAttributes,
   isValidElement,
   type ReactElement,
   type ReactNode,
 } from "react";
+
+type AsChildElementProps = { className?: string; children?: ReactNode } & AriaAttributes;
 
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "dangerFilled";
 export type ButtonSize = "sm" | "md" | "lg";
@@ -62,7 +65,7 @@ export function Button({
   const isDisabled = Boolean(disabled || loading);
 
   if (asChild && isValidElement(children)) {
-    const child = children as ReactElement<{ className?: string; children?: ReactNode }>;
+    const child = children as ReactElement<AsChildElementProps>;
     return cloneElement(child, {
       className: mergeClasses(ui, child.props.className),
       "aria-busy": loading ? true : undefined,

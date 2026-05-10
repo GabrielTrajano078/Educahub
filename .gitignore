@@ -7,3 +7,6 @@ web/dist/
 .DS_Store
 .env
 backend/uploads/
+
+# Ferramentas locais (ex.: gh CLI baixado no projeto)
+.tools/

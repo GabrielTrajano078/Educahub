@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, Navigate } from "react-router-dom";
+import { BrandLogo } from "@/components/BrandLogo";
 import { useAuth } from "@/auth/useAuth";
 import { ApiError } from "@/lib/api-client";
 import { loginFormSchema, type LoginFormValues } from "@/schemas/auth";
@@ -53,8 +54,8 @@ export function LoginPage() {
       <div className="app-canvas" aria-hidden="true" />
       <section className="auth-card">
         <header className="auth-card-header">
-          <div className="auth-logo" aria-hidden="true">
-            <span className="auth-logo-mark">S</span>
+          <div className="auth-logo auth-logo--brand">
+            <BrandLogo variant="auth" />
           </div>
           <div className="auth-card-titles">
             <h1>Entrar</h1>

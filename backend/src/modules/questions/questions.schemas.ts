@@ -16,6 +16,13 @@ export const listQuestionsSchema = z.object({
   axis: curriculumAxisSchema.optional(),
 });
 
+/** Descritores distintos já cadastrados no banco para disciplina/ano. */
+export const listDescriptorsSchema = z.object({
+  discipline: disciplineSchema,
+  grade: gradeSchema,
+  framework: frameworkSchema.optional(),
+});
+
 export const createQuestionSchema = z.object({
   discipline: disciplineSchema,
   grade: gradeSchema,

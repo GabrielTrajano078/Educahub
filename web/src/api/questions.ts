@@ -14,6 +14,19 @@ export type QuestionListItem = {
   optionD: string;
 };
 
+export async function listQuestionDescriptors(params: {
+  discipline: "LP" | "MAT";
+  grade: "5" | "9";
+  framework?: "SAEB";
+}): Promise<{ descriptors: string[] }> {
+  const sp = new URLSearchParams({
+    discipline: params.discipline,
+    grade: params.grade,
+    framework: params.framework ?? "SAEB",
+  });
+  return apiFetch(`/api/questions/descriptors?${sp}`);
+}
+
 export async function listQuestions(params: {
   discipline?: "LP" | "MAT";
   grade?: "5" | "9";

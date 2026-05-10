@@ -577,6 +577,33 @@ export const openApiDocument = {
         },
       },
     },
+    "/api/questions/descriptors": {
+      get: {
+        tags: ["Questions"],
+        summary: "Lista descritores distintos do banco (por disciplina e ano)",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: "discipline", in: "query", required: true, schema: { type: "string", enum: ["LP", "MAT"] } },
+          { name: "grade", in: "query", required: true, schema: { type: "string", enum: ["5", "9"] } },
+          { name: "framework", in: "query", schema: { type: "string", enum: ["SAEB"], default: "SAEB" } },
+        ],
+        responses: {
+          200: {
+            description: "Lista de descritores",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    descriptors: { type: "array", items: { type: "string" } },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
     "/api/questions/suggestions": {
       get: {
         tags: ["Questions"],

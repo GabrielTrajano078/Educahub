@@ -6,7 +6,6 @@ import { SelectField, type SelectFieldOption } from "@/components/SelectField";
 import { Button } from "@/components/ui/Button";
 import { FeedbackModal, type FeedbackModalState } from "@/components/ui/FeedbackModal";
 import { ApiError } from "@/lib/api-client";
-import { axisLabel, CURRICULUM_AXIS_CODES } from "@/lib/curriculum-axis";
 
 const DISCIPLINE_OPTIONS: SelectFieldOption[] = [
   { value: "LP", label: "Língua Portuguesa" },
@@ -25,11 +24,6 @@ const ANSWER_OPTIONS: SelectFieldOption[] = [
   { value: "D", label: "D" },
 ];
 
-const AXIS_OPTIONS: SelectFieldOption[] = CURRICULUM_AXIS_CODES.map((code) => ({
-  value: code,
-  label: axisLabel(code),
-}));
-
 export function QuestionNewPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -47,14 +41,9 @@ export function QuestionNewPage() {
     optionD: "",
     answer: "A",
   });
-  const [axis, setAxis] = useState<string>("");
 
   const m = useMutation({
-    mutationFn: () =>
-      createQuestion({
-        ...form,
-        ...(axis ? { axis } : {}),
-      }),
+    mutationFn: () => createQuestion(form),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["questions"] });
       setPendingNavigate("/questoes");
@@ -110,13 +99,6 @@ export function QuestionNewPage() {
             Descritor / habilidade
             <input value={form.descriptor} onChange={(e) => setForm((f) => ({ ...f, descriptor: e.target.value }))} required minLength={1} />
           </label>
-          <SelectField
-            label="Eixo (opcional)"
-            value={axis}
-            onValueChange={setAxis}
-            options={AXIS_OPTIONS}
-            emptyOption={{ label: "nenhum" }}
-          />
           <label className="field" style={{ gridColumn: "1 / -1" }}>
             Enunciado
             <textarea value={form.prompt} onChange={(e) => setForm((f) => ({ ...f, prompt: e.target.value }))} required />

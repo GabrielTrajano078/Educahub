@@ -6,10 +6,34 @@ import { AnswerSheetModel } from "../results/answer-sheet.model";
 import { ExamModel } from "../exams/exam.model";
 import { StudentModel } from "../students/student.model";
 import { aggregateDescriptorStats } from "../results/results.aggregate";
-import { createQuestionSchema, listQuestionsSchema, questionSuggestionsSchema } from "./questions.schemas";
+import {
+  createQuestionSchema,
+  listDescriptorsSchema,
+  listQuestionsSchema,
+  questionSuggestionsSchema,
+} from "./questions.schemas";
 import { QuestionModel } from "./question.model";
 
 export const questionsRouter = Router();
+
+questionsRouter.get("/descriptors", requireAuth, async (req, res, next) => {
+  try {
+    const filters = listDescriptorsSchema.parse(req.query);
+    const framework = filters.framework ?? "SAEB";
+    const raw = await QuestionModel.distinct("descriptor", {
+      discipline: filters.discipline,
+      grade: filters.grade,
+      framework,
+    });
+    const descriptors = raw
+      .filter((d): d is string => typeof d === "string" && d.trim().length > 0)
+      .map((d) => d.trim())
+      .sort((a, b) => a.localeCompare(b, "pt-BR"));
+    res.json({ descriptors });
+  } catch (error) {
+    next(error);
+  }
+});
 
 questionsRouter.get("/suggestions", requireAuth, async (req, res, next) => {
   try {
