@@ -5,7 +5,6 @@ import { SelectField, type SelectFieldOption } from "@/components/SelectField";
 import { Button } from "@/components/ui/Button";
 import { FeedbackModal, type FeedbackModalState } from "@/components/ui/FeedbackModal";
 import { ApiError } from "@/lib/api-client";
-import { axisLabel, CURRICULUM_AXIS_CODES } from "@/lib/curriculum-axis";
 
 const DISCIPLINE_OPTIONS: SelectFieldOption[] = [
   { value: "LP", label: "Língua Portuguesa" },
@@ -23,11 +22,6 @@ const ANSWER_OPTIONS: SelectFieldOption[] = [
   { value: "C", label: "C" },
   { value: "D", label: "D" },
 ];
-
-const AXIS_OPTIONS: SelectFieldOption[] = CURRICULUM_AXIS_CODES.map((code) => ({
-  value: code,
-  label: axisLabel(code),
-}));
 
 const INITIAL_FORM: CreateQuestionBody = {
   discipline: "LP",
@@ -53,7 +47,6 @@ export function QuestionNewModal({ open, onClose }: QuestionNewModalProps) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const [feedback, setFeedback] = useState<FeedbackModalState | null>(null);
   const [form, setForm] = useState<CreateQuestionBody>(INITIAL_FORM);
-  const [axis, setAxis] = useState<string>("");
 
   useEffect(() => {
     if (!open) return;
@@ -71,11 +64,7 @@ export function QuestionNewModal({ open, onClose }: QuestionNewModalProps) {
   }, [open, onClose]);
 
   const m = useMutation({
-    mutationFn: () =>
-      createQuestion({
-        ...form,
-        ...(axis ? { axis } : {}),
-      }),
+    mutationFn: () => createQuestion(form),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["questions"] });
       setFeedback({ variant: "success", message: "Questão cadastrada com sucesso." });
@@ -141,13 +130,6 @@ export function QuestionNewModal({ open, onClose }: QuestionNewModalProps) {
               <span>Descritor / habilidade</span>
               <input value={form.descriptor} onChange={(e) => setForm((f) => ({ ...f, descriptor: e.target.value }))} required minLength={1} />
             </label>
-            <SelectField
-              label="Eixo (opcional)"
-              value={axis}
-              onValueChange={setAxis}
-              options={AXIS_OPTIONS}
-              emptyOption={{ label: "nenhum" }}
-            />
             <label className="field" style={{ gridColumn: "1 / -1" }}>
               <span>Enunciado</span>
               <textarea value={form.prompt} onChange={(e) => setForm((f) => ({ ...f, prompt: e.target.value }))} required />

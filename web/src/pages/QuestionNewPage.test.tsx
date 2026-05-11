@@ -33,6 +33,11 @@ describe("QuestionNewModal", () => {
     expect(screen.queryByRole("dialog", { name: "Nova questão" })).not.toBeInTheDocument();
   });
 
+  it("não exibe campo de eixo curricular", () => {
+    renderModal();
+    expect(screen.queryByLabelText("Eixo (opcional)")).not.toBeInTheDocument();
+  });
+
   it("cria questão e fecha após confirmação de sucesso", async () => {
     mockedCreateQuestion.mockResolvedValueOnce({ id: "q1" });
     const onClose = renderModal();
@@ -56,6 +61,7 @@ describe("QuestionNewModal", () => {
           optionD: "Alternativa D",
         }),
       );
+      expect(mockedCreateQuestion.mock.calls[0]?.[0]).not.toHaveProperty("axis");
     });
 
     fireEvent.click(await screen.findByRole("button", { name: "OK" }));
