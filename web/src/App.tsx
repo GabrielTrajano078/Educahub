@@ -13,7 +13,6 @@ import { ExamNewPage } from "@/pages/ExamNewPage";
 import { ExamsPage } from "@/pages/ExamsPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { MunicipalityPage } from "@/pages/MunicipalityPage";
-import { QuestionNewPage } from "@/pages/QuestionNewPage";
 import { QuestionsPage } from "@/pages/QuestionsPage";
 import { SchoolNewPage } from "@/pages/SchoolNewPage";
 import { SchoolSummaryPage } from "@/pages/SchoolSummaryPage";
@@ -41,14 +40,6 @@ export default function App() {
               >
                 <Route index element={<DashboardHomePage />} />
                 <Route path="questoes" element={<QuestionsPage />} />
-                <Route
-                  path="questoes/nova"
-                  element={
-                    <RoleRoute allow={["admin"]}>
-                      <QuestionNewPage />
-                    </RoleRoute>
-                  }
-                />
                 <Route path="provas" element={<ExamsPage />} />
                 <Route path="provas/nova" element={<ExamNewPage />} />
                 <Route path="provas/:id" element={<ExamDetailPage />} />

@@ -1596,6 +1596,15 @@ a.ghost {
   animation: modal-dialog-in 0.22s ease-out;
 }
 
+.modal-dialog--question-new {
+  max-width: min(1040px, calc(100vw - 2rem));
+  max-height: min(92vh, 860px);
+}
+
+.modal-dialog--question-new .modal-body {
+  padding: 1.35rem 1.5rem 1.5rem;
+}
+
 @keyframes modal-dialog-in {
   from {
     opacity: 0;

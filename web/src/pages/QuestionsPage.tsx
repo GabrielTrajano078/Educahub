@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/useAuth";
 import type { QuestionListItem } from "@/api/questions";
 import { listQuestions } from "@/api/questions";
@@ -12,6 +12,7 @@ import { axisLabel, CURRICULUM_AXIS_CODES, type CurriculumAxisCode } from "@/lib
 import { copy } from "@/lib/copy";
 import { disciplineLabel } from "@/lib/discipline";
 import { formatApiError } from "@/lib/format-api-error";
+import { QuestionNewModal } from "./QuestionNewPage";
 
 const DISCIPLINE_FILTER_OPTIONS: SelectFieldOption[] = [
   { value: "LP", label: "Língua Portuguesa" },
@@ -49,6 +50,7 @@ export function QuestionsPage() {
   const { state } = useAuth();
   const [sp, setSp] = useSearchParams();
   const [preview, setPreview] = useState<QuestionListItem | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const discipline = parseDiscipline(sp.get("discipline"));
   const grade = parseGrade(sp.get("grade"));
@@ -104,12 +106,13 @@ export function QuestionsPage() {
   return (
     <div>
       <QuestionPreviewModal question={preview} onClose={() => setPreview(null)} />
+      {createOpen ? <QuestionNewModal open onClose={() => setCreateOpen(false)} /> : null}
       <section className="panel">
         <div className="section-header">
           <h2>Banco de questões</h2>
           {state.user.role === "admin" ? (
-            <Button asChild variant="primary">
-              <Link to="/questoes/nova">Nova questão</Link>
+            <Button type="button" variant="primary" onClick={() => setCreateOpen(true)}>
+              Nova questão
             </Button>
           ) : null}
         </div>
@@ -141,7 +144,7 @@ export function QuestionsPage() {
             emptyOption={{ label: "Todas" }}
           />
           <label className="field field--span-2">
-            Descritor (contém)
+            <span>Descritor (contém)</span>
             <input
               value={descriptor}
               onChange={(e) => {
@@ -172,14 +175,14 @@ export function QuestionsPage() {
             {formatApiError(q.error, copy.questionsListError)}
           </p>
         ) : null}
-        {q.data && q.data.length === 0 ? (
+        {q.data?.length === 0 ? (
           <EmptyState
             title="Nenhuma questão encontrada"
             description="Ajuste os filtros ou cadastre novos itens no banco (até 200 resultados por busca)."
             action={
               state.user.role === "admin" ? (
-                <Button asChild variant="primary">
-                  <Link to="/questoes/nova">Cadastrar questão</Link>
+                <Button type="button" variant="primary" onClick={() => setCreateOpen(true)}>
+                  Cadastrar questão
                 </Button>
               ) : null
             }

@@ -1,11 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useId, useRef, useState } from "react";
 import { createQuestion, type CreateQuestionBody } from "@/api/questions";
 import { SelectField, type SelectFieldOption } from "@/components/SelectField";
 import { Button } from "@/components/ui/Button";
 import { FeedbackModal, type FeedbackModalState } from "@/components/ui/FeedbackModal";
 import { ApiError } from "@/lib/api-client";
+import { axisLabel, CURRICULUM_AXIS_CODES } from "@/lib/curriculum-axis";
 
 const DISCIPLINE_OPTIONS: SelectFieldOption[] = [
   { value: "LP", label: "Língua Portuguesa" },
@@ -24,29 +24,60 @@ const ANSWER_OPTIONS: SelectFieldOption[] = [
   { value: "D", label: "D" },
 ];
 
-export function QuestionNewPage() {
-  const navigate = useNavigate();
+const AXIS_OPTIONS: SelectFieldOption[] = CURRICULUM_AXIS_CODES.map((code) => ({
+  value: code,
+  label: axisLabel(code),
+}));
+
+const INITIAL_FORM: CreateQuestionBody = {
+  discipline: "LP",
+  grade: "5",
+  framework: "SAEB",
+  descriptor: "",
+  prompt: "",
+  optionA: "",
+  optionB: "",
+  optionC: "",
+  optionD: "",
+  answer: "A",
+};
+
+type QuestionNewModalProps = Readonly<{
+  open: boolean;
+  onClose: () => void;
+}>;
+
+export function QuestionNewModal({ open, onClose }: QuestionNewModalProps) {
   const qc = useQueryClient();
+  const titleId = useId();
+  const closeRef = useRef<HTMLButtonElement>(null);
   const [feedback, setFeedback] = useState<FeedbackModalState | null>(null);
-  const [pendingNavigate, setPendingNavigate] = useState<string | null>(null);
-  const [form, setForm] = useState<CreateQuestionBody>({
-    discipline: "LP",
-    grade: "5",
-    framework: "SAEB",
-    descriptor: "",
-    prompt: "",
-    optionA: "",
-    optionB: "",
-    optionC: "",
-    optionD: "",
-    answer: "A",
-  });
+  const [form, setForm] = useState<CreateQuestionBody>(INITIAL_FORM);
+  const [axis, setAxis] = useState<string>("");
+
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    closeRef.current?.focus();
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    globalThis.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      globalThis.removeEventListener("keydown", onKey);
+    };
+  }, [open, onClose]);
 
   const m = useMutation({
-    mutationFn: () => createQuestion(form),
+    mutationFn: () =>
+      createQuestion({
+        ...form,
+        ...(axis ? { axis } : {}),
+      }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["questions"] });
-      setPendingNavigate("/questoes");
       setFeedback({ variant: "success", message: "Questão cadastrada com sucesso." });
     },
     onError: (e: unknown) => {
@@ -55,20 +86,28 @@ export function QuestionNewPage() {
   });
 
   function handleCloseFeedback() {
+    const wasSuccess = feedback?.variant === "success";
     setFeedback(null);
-    if (pendingNavigate) {
-      const to = pendingNavigate;
-      setPendingNavigate(null);
-      navigate(to);
+    if (wasSuccess) {
+      onClose();
     }
   }
 
+  if (!open) return null;
+
   return (
-    <div>
+    <div className="modal-backdrop">
       <FeedbackModal feedback={feedback} onClose={handleCloseFeedback} />
-      <div className="page-content-fill">
-        <section className="panel panel--fill-main">
-          <h2>Nova questão (admin)</h2>
+      <dialog open className="modal-dialog modal-dialog--question-new" aria-labelledby={titleId}>
+        <header className="modal-header">
+          <h2 id={titleId} className="modal-title">
+            Nova questão
+          </h2>
+          <button ref={closeRef} type="button" className="modal-close" onClick={onClose} aria-label="Fechar">
+            ×
+          </button>
+        </header>
+        <div className="modal-body">
           <p className="muted small">Campos obrigatórios alinhados à matriz SAEB.</p>
           <form
             className="form-grid question-new-form"
@@ -143,8 +182,8 @@ export function QuestionNewPage() {
               </Button>
             </div>
           </form>
-        </section>
-      </div>
+        </div>
+      </dialog>
     </div>
   );
 }
