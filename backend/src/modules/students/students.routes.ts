@@ -1,7 +1,5 @@
 import { Types } from "mongoose";
 import { Router } from "express";
-import type { AuthUser } from "../../types/auth";
-import { escapeRegex } from "../../lib/escape-regex";
 import { canAccessClassroom, canAccessSchool, canAccessStudent } from "../../lib/access";
 import { requireAuth, requireRole } from "../../middlewares/auth";
 import { ClassroomModel } from "../classes/classroom.model";
@@ -9,104 +7,28 @@ import { AnswerSheetModel } from "../results/answer-sheet.model";
 import { AnswerSheetScanModel } from "../results/answer-sheet-scan.model";
 import { ResultModel } from "../results/result.model";
 import { StudentModel } from "./student.model";
+import { computeListStudentsComputation } from "./students-list-scope";
 import { createStudentSchema, listStudentsSchema } from "./students.schemas";
+import { isDuplicateKeyError } from "./students.server-logic";
 
 export const studentsRouter = Router();
-
-function isDuplicateKeyError(error: unknown): error is { code: number } {
-  return Boolean(error && typeof error === "object" && "code" in error && (error as { code?: number }).code === 11000);
-}
-
-async function classroomIdsForGrade(
-  grade: "5" | "9",
-  filtersSchoolId: string | undefined,
-  user: AuthUser,
-): Promise<Types.ObjectId[]> {
-  const cq: Record<string, unknown> = { grade };
-  if (filtersSchoolId) {
-    cq.schoolId = filtersSchoolId;
-  } else if (user.role === "coordenador" || user.role === "professor") {
-    if (!user.schoolId || !Types.ObjectId.isValid(user.schoolId)) {
-      return [];
-    }
-    cq.schoolId = user.schoolId;
-  }
-  const cls = await ClassroomModel.find(cq).select("_id").lean();
-  return cls.map((c) => c._id as Types.ObjectId);
-}
 
 studentsRouter.get("/", requireAuth, async (req, res, next) => {
   try {
     const filters = listStudentsSchema.parse(req.query);
-    const nameTrim = filters.fullNameContains?.trim();
     const user = req.user!;
+    const computed = await computeListStudentsComputation(filters, user);
 
-    let gradeClassroomIds: Types.ObjectId[] | undefined;
-    const useGradeFilter = Boolean(filters.grade && !filters.classroomId);
-    if (useGradeFilter && filters.grade) {
-      gradeClassroomIds = await classroomIdsForGrade(filters.grade, filters.schoolId, user);
-      if (gradeClassroomIds.length === 0) {
-        res.json([]);
-        return;
-      }
+    if (computed.action === "json") {
+      res.json(computed.body);
+      return;
+    }
+    if (computed.action === "status_json") {
+      res.status(computed.status).json(computed.body);
+      return;
     }
 
-    const query: Record<string, unknown> = {};
-    if (nameTrim) {
-      query.fullName = { $regex: escapeRegex(nameTrim), $options: "i" };
-    }
-
-    if (filters.classroomId) {
-      query.classroomId = new Types.ObjectId(filters.classroomId);
-    }
-
-    if (user.role === "professor") {
-      if (!user.schoolId) {
-        res.status(403).json({ message: "Usuario sem escola vinculada." });
-        return;
-      }
-      query.schoolId = user.schoolId;
-      const assigned = user.classroomIds.filter((id) => Types.ObjectId.isValid(id));
-      if (assigned.length === 0) {
-        res.json([]);
-        return;
-      }
-      const assignedOid = assigned.map((id) => new Types.ObjectId(id));
-      if (filters.classroomId) {
-        if (!assigned.includes(filters.classroomId)) {
-          res.json([]);
-          return;
-        }
-      } else if (gradeClassroomIds) {
-        const allowed = new Set(gradeClassroomIds.map((id) => String(id)));
-        const pool = assignedOid.filter((id) => allowed.has(String(id)));
-        if (pool.length === 0) {
-          res.json([]);
-          return;
-        }
-        query.classroomId = { $in: pool };
-      } else {
-        query.classroomId = { $in: assignedOid };
-      }
-    } else if (user.role === "coordenador") {
-      if (!user.schoolId) {
-        res.status(403).json({ message: "Usuario sem escola vinculada." });
-        return;
-      }
-      query.schoolId = user.schoolId;
-      if (!filters.classroomId && gradeClassroomIds) {
-        query.classroomId = { $in: gradeClassroomIds };
-      }
-    } else {
-      if (filters.schoolId) {
-        query.schoolId = filters.schoolId;
-      }
-      if (!filters.classroomId && gradeClassroomIds) {
-        query.classroomId = { $in: gradeClassroomIds };
-      }
-    }
-
-    const students = await StudentModel.find(query).sort({ fullName: 1 }).lean();
+    const students = await StudentModel.find(computed.query).sort({ fullName: 1 }).lean();
     res.json(students);
   } catch (error) {
     next(error);
