@@ -1,3 +1,4 @@
+import { describe, expect, it } from "@jest/globals";
 import { ZodError } from "zod";
 import { createStudentSchema, listStudentsSchema } from "../../src/modules/students/students.schemas";
 

@@ -1,4 +1,5 @@
 import request from "supertest";
+import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import jwt from "jsonwebtoken";
 import { Types } from "mongoose";
 import { app } from "../../src/app";
@@ -46,6 +47,11 @@ jest.mock("../../src/lib/access", () => ({
 
 const validOid = "507f1f77bcf86cd799439011";
 const otherOid = "507f1f77bcf86cd799439012";
+type AsyncMock = jest.MockedFunction<(...args: unknown[]) => Promise<unknown>>;
+
+function asAsyncMock(fn: unknown): AsyncMock {
+  return fn as AsyncMock;
+}
 
 function bearerAdmin(): string {
   const token = jwt.sign({ id: validOid, role: "admin" }, env.JWT_SECRET, { expiresIn: "1h" });
@@ -70,13 +76,13 @@ function bearerProfessor(payload: {
 }
 
 function mockStudentFindReturns(rows: unknown[]): void {
-  const lean = jest.fn().mockResolvedValue(rows);
+  const lean = jest.fn<() => Promise<unknown[]>>().mockResolvedValue(rows);
   const sort = jest.fn().mockReturnValue({ lean });
   (StudentModel.find as jest.Mock).mockReturnValue({ sort });
 }
 
 function mockClassroomById(schoolId: string): void {
-  const lean = jest.fn().mockResolvedValue({ schoolId: new Types.ObjectId(schoolId) });
+  const lean = jest.fn<() => Promise<unknown>>().mockResolvedValue({ schoolId: new Types.ObjectId(schoolId) });
   (ClassroomModel.findById as jest.Mock).mockReturnValue({
     select: jest.fn().mockReturnValue({ lean }),
   });
@@ -86,7 +92,7 @@ function mockClassroomsForGrade(ids: Types.ObjectId[]): void {
   const rows = ids.map((id) => ({ _id: id }));
   (ClassroomModel.find as jest.Mock).mockReturnValue({
     select: jest.fn().mockReturnValue({
-      lean: jest.fn().mockResolvedValue(rows),
+      lean: jest.fn<() => Promise<unknown[]>>().mockResolvedValue(rows),
     }),
   });
 }
@@ -95,7 +101,7 @@ describe("POST /api/students", () => {
   beforeEach(() => {
     jest.mocked(access.canAccessSchool).mockReset();
     jest.mocked(access.canAccessClassroom).mockReset();
-    (StudentModel.create as jest.Mock).mockReset();
+    asAsyncMock(StudentModel.create).mockReset();
     (ClassroomModel.findById as jest.Mock).mockReset();
   });
 
@@ -163,7 +169,7 @@ describe("POST /api/students", () => {
 
   it("404 quando turma nao existe", async () => {
     jest.mocked(access.canAccessSchool).mockResolvedValue(true);
-    const lean = jest.fn().mockResolvedValue(null);
+    const lean = jest.fn<() => Promise<unknown>>().mockResolvedValue(null);
     (ClassroomModel.findById as jest.Mock).mockReturnValue({
       select: jest.fn().mockReturnValue({ lean }),
     });
@@ -203,7 +209,7 @@ describe("POST /api/students", () => {
   it("409 em violacao de unicidade (codigo 11000)", async () => {
     jest.mocked(access.canAccessSchool).mockResolvedValue(true);
     mockClassroomById(validOid);
-    (StudentModel.create as jest.Mock).mockRejectedValue({ code: 11000 });
+    asAsyncMock(StudentModel.create).mockRejectedValue({ code: 11000 });
 
     const res = await request(app)
       .post("/api/students")
@@ -222,7 +228,7 @@ describe("POST /api/students", () => {
   it("500 quando create falha com erro que nao e duplicata", async () => {
     jest.mocked(access.canAccessSchool).mockResolvedValue(true);
     mockClassroomById(validOid);
-    (StudentModel.create as jest.Mock).mockRejectedValue(new Error("falha persistencia"));
+    asAsyncMock(StudentModel.create).mockRejectedValue(new Error("falha persistencia"));
 
     const res = await request(app)
       .post("/api/students")
@@ -242,7 +248,7 @@ describe("POST /api/students", () => {
     jest.mocked(access.canAccessSchool).mockResolvedValue(true);
     mockClassroomById(validOid);
     const createdId = new Types.ObjectId();
-    (StudentModel.create as jest.Mock).mockResolvedValue({ _id: createdId });
+    asAsyncMock(StudentModel.create).mockResolvedValue({ _id: createdId });
 
     const res = await request(app)
       .post("/api/students")
@@ -343,7 +349,7 @@ describe("DELETE /api/students/:id", () => {
 
   it("204 quando exclusao autorizada e aluno existe", async () => {
     jest.mocked(access.canAccessStudent).mockResolvedValue(true);
-    const lean = jest.fn().mockResolvedValue({ _id: validOid });
+    const lean = jest.fn<() => Promise<unknown>>().mockResolvedValue({ _id: validOid });
     (StudentModel.findById as jest.Mock).mockReturnValue({
       select: jest.fn().mockReturnValue({ lean }),
     });
