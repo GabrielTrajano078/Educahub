@@ -1,16 +1,20 @@
-import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/useAuth";
-import { listExams } from "@/api/exams";
+import { deleteExam, listExams } from "@/api/exams";
 import { SelectField, type SelectFieldOption } from "@/components/SelectField";
 import { Button } from "@/components/ui/Button";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { FeedbackModal, type FeedbackModalState } from "@/components/ui/FeedbackModal";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { ApiError } from "@/lib/api-client";
 import { axisLabel, CURRICULUM_AXIS_CODES, type CurriculumAxisCode } from "@/lib/curriculum-axis";
 import { copy } from "@/lib/copy";
 import { disciplineLabel } from "@/lib/discipline";
 import { formatApiError } from "@/lib/format-api-error";
+import { ExamNewModal } from "./ExamNewPage";
 
 const DISCIPLINE_FILTER_OPTIONS: SelectFieldOption[] = [
   { value: "LP", label: "Língua Portuguesa" },
@@ -44,9 +48,54 @@ function parseAxis(v: string | null): "" | CurriculumAxisCode {
   return "";
 }
 
+const actionIconProps = {
+  width: 16,
+  height: 16,
+  viewBox: "0 0 24 24",
+  fill: "none" as const,
+  stroke: "currentColor",
+  strokeWidth: 1.8,
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+  "aria-hidden": true,
+};
+
+function ActionIcon({ name }: Readonly<{ name: "open" | "edit" | "delete" }>) {
+  if (name === "open") {
+    return (
+      <svg {...actionIconProps}>
+        <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z" />
+        <circle cx="12" cy="12" r="3" />
+      </svg>
+    );
+  }
+  if (name === "edit") {
+    return (
+      <svg {...actionIconProps}>
+        <path d="M12 20h9" />
+        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+      </svg>
+    );
+  }
+  return (
+    <svg {...actionIconProps}>
+      <path d="M3 6h18" />
+      <path d="M8 6V4h8v2" />
+      <path d="M19 6l-1 14H6L5 6" />
+      <path d="M10 11v5" />
+      <path d="M14 11v5" />
+    </svg>
+  );
+}
+
 export function ExamsPage() {
   const { state } = useAuth();
   const [sp, setSp] = useSearchParams();
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editingExamId, setEditingExamId] = useState<string | null>(null);
+  const [deleteErr, setDeleteErr] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<FeedbackModalState | null>(null);
+  const confirm = useConfirm();
 
   const discipline = parseDiscipline(sp.get("discipline"));
   const grade = parseGrade(sp.get("grade"));
@@ -96,17 +145,36 @@ export function ExamsPage() {
     enabled: state.status === "authenticated",
   });
 
+  const deleteM = useMutation({
+    mutationFn: (id: string) => deleteExam(id),
+    onSuccess: () => {
+      setDeleteErr(null);
+      setFeedback({ variant: "success", message: "Prova excluída com sucesso." });
+      void q.refetch();
+    },
+    onError: (e: unknown) => {
+      if (e instanceof ApiError || e instanceof Error) {
+        setDeleteErr(e.message);
+        return;
+      }
+      setDeleteErr("Não foi possível excluir.");
+    },
+  });
+
   if (state.status !== "authenticated") {
     return null;
   }
 
   return (
     <div>
+      <FeedbackModal feedback={feedback} onClose={() => setFeedback(null)} />
+      {createOpen ? <ExamNewModal open onClose={() => setCreateOpen(false)} onCreated={() => setCreateOpen(false)} /> : null}
+      {editingExamId ? <ExamNewModal open examId={editingExamId} onClose={() => setEditingExamId(null)} /> : null}
       <section className="panel">
         <div className="section-header">
           <h2>Provas</h2>
-          <Button asChild variant="primary">
-            <Link to="/provas/nova">Nova prova</Link>
+          <Button type="button" variant="primary" onClick={() => setCreateOpen(true)}>
+            Nova prova
           </Button>
         </div>
 
@@ -166,13 +234,18 @@ export function ExamsPage() {
             {formatApiError(q.error, copy.examListError)}
           </p>
         ) : null}
+        {deleteErr ? (
+          <p className="error" role="alert">
+            {deleteErr}
+          </p>
+        ) : null}
         {q.data?.length === 0 ? (
           <EmptyState
             title="Nenhuma prova encontrada"
             description="Ajuste os filtros ou crie uma prova diagnóstica ou simulado para acompanhar resultados por turma."
             action={
-              <Button asChild variant="primary">
-                <Link to="/provas/nova">Criar prova</Link>
+              <Button type="button" variant="primary" onClick={() => setCreateOpen(true)}>
+                Criar prova
               </Button>
             }
           />
@@ -183,12 +256,10 @@ export function ExamsPage() {
               <thead>
                 <tr>
                   <th>Título</th>
-                  <th>Código</th>
                   <th>Disciplina / Ano</th>
-                  <th>Tipo</th>
                   <th>Status</th>
                   <th>Qtd</th>
-                  <th></th>
+                  <th className="col-actions">Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -196,18 +267,45 @@ export function ExamsPage() {
                   <tr key={e._id}>
                     <td>{e.title}</td>
                     <td>
-                      <span className="badge">{e.examCode ?? "—"}</span>
-                    </td>
-                    <td>
                       {disciplineLabel(e.discipline)} · {e.grade}º
                     </td>
-                    <td>{e.examType ?? "—"}</td>
                     <td>
                       <StatusBadge status={e.status} />
                     </td>
                     <td>{e.questionCount ?? "—"}</td>
-                    <td>
-                      <Link to={`/provas/${e._id}`}>Abrir</Link>
+                    <td className="col-actions">
+                      <Link to={`/provas/${e._id}`} className="ghost btn-compact" aria-label={`Abrir ${e.title}`} title="Abrir">
+                        <ActionIcon name="open" />
+                      </Link>
+                      <button
+                        type="button"
+                        className="ghost btn-compact"
+                        onClick={() => setEditingExamId(e._id)}
+                        aria-label={`Editar ${e.title}`}
+                        title="Editar"
+                      >
+                        <ActionIcon name="edit" />
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-danger-text btn-compact"
+                        disabled={deleteM.isPending}
+                        aria-label={`Excluir ${e.title}`}
+                        title="Excluir"
+                        onClick={async () => {
+                          const ok = await confirm({
+                            title: "Excluir prova",
+                            description: `Excluir "${e.title}"? Esta ação não pode ser desfeita.`,
+                            variant: "danger",
+                            confirmLabel: "Excluir",
+                            cancelLabel: "Cancelar",
+                          });
+                          if (!ok) return;
+                          deleteM.mutate(e._id);
+                        }}
+                      >
+                        {deleteM.isPending && deleteM.variables === e._id ? "…" : <ActionIcon name="delete" />}
+                      </button>
                     </td>
                   </tr>
                 ))}

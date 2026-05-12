@@ -87,6 +87,14 @@ export async function createExam(body: CreateExamBody): Promise<{ id: string; ex
   return apiFetch("/api/exams", { method: "POST", body });
 }
 
+export async function updateExam(id: string, body: CreateExamBody): Promise<{ id: string }> {
+  return apiFetch(`/api/exams/${encodeURIComponent(id)}`, { method: "PATCH", body });
+}
+
+export async function deleteExam(id: string): Promise<void> {
+  await apiFetch<null>(`/api/exams/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
 export type SimulatedBlueprintResponse = {
   framework: string;
   discipline: string;

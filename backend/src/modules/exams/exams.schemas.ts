@@ -56,6 +56,17 @@ export const createExamSchema = z
     { message: "Informe questionCount para PDF importado ou exatamente um de: questionIds, blueprint ou blueprintByAxis." },
   );
 
+export const updateExamSchema = z.object({
+  schoolId: objectIdSchema.optional(),
+  classroomId: objectIdSchema.optional(),
+  title: z.string().min(3).optional(),
+  discipline: disciplineSchema.optional(),
+  grade: gradeSchema.optional(),
+  framework: frameworkSchema.optional(),
+  examType: examTypeSchema.optional(),
+  questionIds: z.array(objectIdSchema).min(1).optional(),
+});
+
 export const listExamsSchema = z.object({
   schoolId: objectIdSchema.optional(),
   classroomId: objectIdSchema.optional(),

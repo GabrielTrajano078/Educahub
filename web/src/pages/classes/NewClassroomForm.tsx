@@ -1,4 +1,4 @@
-import type { FormEvent } from "react";
+import type { ComponentProps } from "react";
 import type { UseMutationResult } from "@tanstack/react-query";
 import type { CreateClassroomBody } from "@/api/classes";
 import { SelectField } from "@/components/SelectField";
@@ -7,7 +7,7 @@ import { FeedbackMessage } from "@/components/ui/FeedbackMessage";
 import type { School } from "@/schemas/school";
 import type { User } from "@/schemas/auth";
 
-export type NewClassroomFormProps = {
+export type NewClassroomFormProps = Readonly<{
   schools: School[];
   schoolId: string;
   onSchoolIdChange: (v: string) => void;
@@ -20,8 +20,8 @@ export type NewClassroomFormProps = {
   user: User;
   formError: string | null;
   createM: UseMutationResult<{ id: string }, unknown, CreateClassroomBody, unknown>;
-  onSubmit: (e: FormEvent) => void;
-};
+  onSubmit: NonNullable<ComponentProps<"form">["onSubmit"]>;
+}>;
 
 export function NewClassroomForm({
   schools,
@@ -89,7 +89,7 @@ export function NewClassroomForm({
   );
 }
 
-function CoordSchoolHint({ user }: { user: User }) {
+function CoordSchoolHint({ user }: Readonly<{ user: User }>) {
   return (
     <p className="muted small" style={{ margin: 0, gridColumn: "1 / -1" }}>
       {user.schoolId ? (

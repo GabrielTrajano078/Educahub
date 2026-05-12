@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { type FormEvent, useEffect, useState } from "react";
+import { type ComponentProps, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/useAuth";
 import { createClassroom } from "@/api/classes";
@@ -29,11 +29,7 @@ export function ClassroomNewPage() {
     enabled: state.status === "authenticated" && Boolean(needsSchoolPicker),
   });
 
-  useEffect(() => {
-    if (isCoord && user?.schoolId) {
-      setSchoolId(user.schoolId);
-    }
-  }, [isCoord, user?.schoolId]);
+  const effectiveSchoolId = isCoord && user?.schoolId ? user.schoolId : schoolId;
 
   const createM = useMutation({
     mutationFn: createClassroom,
@@ -50,10 +46,10 @@ export function ClassroomNewPage() {
     },
   });
 
-  function handleSubmit(e: FormEvent) {
+  const handleSubmit: NonNullable<ComponentProps<"form">["onSubmit"]> = (e) => {
     e.preventDefault();
     setFormError(null);
-    const sid = schoolId.trim();
+    const sid = effectiveSchoolId.trim();
     if (!sid) {
       setFeedback({ variant: "warning", message: "Selecione a escola." });
       return;
@@ -64,7 +60,7 @@ export function ClassroomNewPage() {
       return;
     }
     createM.mutate({ schoolId: sid, name: n, grade });
-  }
+  };
 
   if (state.status !== "authenticated" || !user) {
     return null;
@@ -93,7 +89,7 @@ export function ClassroomNewPage() {
 
         <NewClassroomForm
           schools={schools}
-          schoolId={schoolId}
+          schoolId={effectiveSchoolId}
           onSchoolIdChange={setSchoolId}
           name={name}
           onNameChange={setName}

@@ -25,8 +25,11 @@ import {
   generateAnswerSheetsSchema,
   listExamsSchema,
   simulatedBlueprintQuerySchema,
+  updateExamSchema,
 } from "./exams.schemas";
 import { getSimulatedBlueprint } from "./simulated-blueprint";
+import { ResultModel } from "../results/result.model";
+import { AnswerSheetScanModel } from "../results/answer-sheet-scan.model";
 
 export const examsRouter = Router();
 
@@ -326,6 +329,127 @@ examsRouter.get("/:id", requireAuth, async (req, res, next) => {
     next(error);
   }
 });
+
+examsRouter.patch(
+  "/:id",
+  requireAuth,
+  requireRole("admin", "gestor", "coordenador", "professor"),
+  async (req, res, next) => {
+    try {
+      const { id } = examIdParamSchema.parse(req.params);
+      const data = updateExamSchema.parse(req.body);
+      const exam = await ExamModel.findById(id).lean();
+      if (!exam) {
+        res.status(404).json({ message: "Prova nao encontrada." });
+        return;
+      }
+
+      const allowed = await canAccessExamRecord(req.user!, exam);
+      if (!allowed) {
+        res.status(403).json({ message: "Acesso negado a esta prova." });
+        return;
+      }
+
+      const targetSchoolId = data.schoolId ?? String(exam.schoolId);
+      const targetClassroomId = data.classroomId ?? String(exam.classroomId);
+      const schoolOk = await canAccessSchool(req.user!, targetSchoolId);
+      if (!schoolOk) {
+        res.status(403).json({ message: "Acesso negado a esta escola." });
+        return;
+      }
+
+      const classOk = await canAccessClassroom(req.user!, targetClassroomId);
+      if (!classOk) {
+        res.status(403).json({ message: "Acesso negado a esta turma." });
+        return;
+      }
+
+      const classroom = await ClassroomModel.findById(targetClassroomId).select("schoolId").lean();
+      if (!classroom) {
+        res.status(404).json({ message: "Turma nao encontrada." });
+        return;
+      }
+      if (String(classroom.schoolId) !== targetSchoolId) {
+        res.status(400).json({ message: "A turma nao pertence a escola informada." });
+        return;
+      }
+
+      const $set: Record<string, unknown> = {
+        ...(data.schoolId ? { schoolId: new Types.ObjectId(data.schoolId) } : {}),
+        ...(data.classroomId ? { classroomId: new Types.ObjectId(data.classroomId) } : {}),
+        ...(data.title ? { title: data.title } : {}),
+        ...(data.discipline ? { discipline: data.discipline } : {}),
+        ...(data.grade ? { grade: data.grade } : {}),
+        ...(data.framework ? { framework: data.framework } : {}),
+        ...(data.examType ? { examType: data.examType } : {}),
+      };
+
+      if (data.questionIds) {
+        const targetDiscipline = data.discipline ?? exam.discipline;
+        const targetGrade = data.grade ?? exam.grade;
+        const targetFramework = data.framework ?? exam.framework;
+        const docs = await QuestionModel.find({
+          _id: { $in: data.questionIds.map((questionId) => new Types.ObjectId(questionId)) },
+          discipline: targetDiscipline,
+          grade: targetGrade,
+          framework: targetFramework,
+        })
+          .select("_id")
+          .lean();
+
+        if (docs.length !== data.questionIds.length) {
+          res.status(400).json({ message: "Uma ou mais questoes nao pertencem aos filtros da prova." });
+          return;
+        }
+
+        $set.questions = data.questionIds.map((questionId, index) => ({
+          questionId: new Types.ObjectId(questionId),
+          order: index + 1,
+        }));
+        $set.questionCount = data.questionIds.length;
+      }
+
+      await ExamModel.updateOne({ _id: new Types.ObjectId(id) }, { $set });
+      res.json({ id });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+examsRouter.delete(
+  "/:id",
+  requireAuth,
+  requireRole("admin", "gestor", "coordenador", "professor"),
+  async (req, res, next) => {
+    try {
+      const { id } = examIdParamSchema.parse(req.params);
+      const exam = await ExamModel.findById(id).lean();
+      if (!exam) {
+        res.status(404).json({ message: "Prova nao encontrada." });
+        return;
+      }
+
+      const allowed = await canAccessExamRecord(req.user!, exam);
+      if (!allowed) {
+        res.status(403).json({ message: "Acesso negado a esta prova." });
+        return;
+      }
+
+      const examId = new Types.ObjectId(id);
+      await ResultModel.deleteMany({ examId });
+      await AnswerSheetScanModel.deleteMany({ examId });
+      await AnswerSheetModel.deleteMany({ examId });
+      await OfficialAnswerKeyModel.deleteMany({ examId });
+      await ExamFileModel.deleteMany({ examId });
+      await ExamModel.deleteOne({ _id: examId });
+
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 examsRouter.post(
   "/",
