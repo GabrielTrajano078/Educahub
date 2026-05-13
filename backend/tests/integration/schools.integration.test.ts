@@ -110,6 +110,21 @@ describe("GET /api/schools", () => {
     expect(res.status).toBe(400);
     expect(res.body).toEqual({ message: "Erro de validacao", issues: expect.any(Array) });
   });
+
+  it("200 gestor combina municipio do perfil com nameContains", async () => {
+    mockSchoolFindReturns([]);
+
+    const res = await request(app)
+      .get("/api/schools")
+      .query({ nameContains: "EMEF" })
+      .set("Authorization", bearer("gestor", { municipalityCode: "2304400" }));
+
+    expect(res.status).toBe(200);
+    expect(SchoolModel.find).toHaveBeenCalledWith({
+      municipalityCode: "2304400",
+      name: { $regex: "EMEF", $options: "i" },
+    });
+  });
 });
 
 describe("POST /api/schools", () => {
@@ -200,5 +215,33 @@ describe("POST /api/schools", () => {
       city: "Fortaleza",
       municipalityCode: "2304400",
     });
+  });
+
+  it("201 gestor aceita municipalityCode igual ao perfil", async () => {
+    const createdId = new Types.ObjectId(validOid);
+    asAsyncMock(SchoolModel.create).mockResolvedValue({ _id: createdId });
+
+    const res = await request(app)
+      .post("/api/schools")
+      .set("Authorization", bearer("gestor", { municipalityCode: "2304400" }))
+      .send({ name: "EMEF Sul", municipalityCode: "2304400" });
+
+    expect(res.status).toBe(201);
+    expect(SchoolModel.create).toHaveBeenCalledWith({
+      name: "EMEF Sul",
+      municipalityCode: "2304400",
+    });
+  });
+
+  it("500 quando create falha", async () => {
+    asAsyncMock(SchoolModel.create).mockRejectedValue(new Error("falha persistencia"));
+
+    const res = await request(app)
+      .post("/api/schools")
+      .set("Authorization", bearer("admin"))
+      .send({ name: "EMEF Centro" });
+
+    expect(res.status).toBe(500);
+    expect(res.body).toEqual({ message: "Erro interno do servidor." });
   });
 });

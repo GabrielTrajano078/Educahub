@@ -70,4 +70,22 @@ describe("NewSchoolForm", () => {
       municipalityCode: "2304400",
     });
   });
+
+  it("seleciona sugestão de cidade pelo mouse", () => {
+    const onSelectCitySuggestion = vi.fn();
+
+    renderForm({
+      showCitySuggestions: true,
+      citySuggestions: [{ codigo: "2304400", nome: "Fortaleza", uf: "CE" }],
+      onSelectCitySuggestion,
+    });
+
+    fireEvent.mouseDown(screen.getByRole("button", { name: /Fortaleza\/CE/i }));
+
+    expect(onSelectCitySuggestion).toHaveBeenCalledWith({
+      codigo: "2304400",
+      nome: "Fortaleza",
+      uf: "CE",
+    });
+  });
 });
