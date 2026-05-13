@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useSearchParams } from "react-router-dom";
 import { AuthProvider } from "@/auth/AuthProvider";
 import { QueryProvider } from "@/providers/QueryProvider";
 import { AppLayout } from "@/layout/AppLayout";
@@ -6,10 +6,8 @@ import { ConfirmProvider } from "@/components/ui/ConfirmDialog";
 import { BootstrapPage } from "@/pages/BootstrapPage";
 import { ClassroomPage } from "@/pages/ClassroomPage";
 import { ClassesPage } from "@/pages/ClassesPage";
-import { ClassroomNewPage } from "@/pages/ClassroomNewPage";
 import { DashboardHomePage } from "@/pages/DashboardHomePage";
 import { ExamDetailPage } from "@/pages/ExamDetailPage";
-import { ExamNewPage } from "@/pages/ExamNewPage";
 import { ExamsPage } from "@/pages/ExamsPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { MunicipalityPage } from "@/pages/MunicipalityPage";
@@ -17,10 +15,18 @@ import { QuestionsPage } from "@/pages/QuestionsPage";
 import { SchoolNewPage } from "@/pages/SchoolNewPage";
 import { SchoolSummaryPage } from "@/pages/SchoolSummaryPage";
 import { SchoolsPage } from "@/pages/SchoolsPage";
-import { StudentNewPage } from "@/pages/StudentNewPage";
 import { StudentsPage } from "@/pages/StudentsPage";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
 import { RoleRoute } from "@/routes/RoleRoute";
+
+function RedirectAlunosNova() {
+  const [sp] = useSearchParams();
+  const cid = sp.get("classroomId");
+  const q = new URLSearchParams();
+  q.set("nova", "1");
+  if (cid) q.set("classroomId", cid);
+  return <Navigate to={`/alunos?${q.toString()}`} replace />;
+}
 
 export default function App() {
   return (
@@ -41,26 +47,12 @@ export default function App() {
                 <Route index element={<DashboardHomePage />} />
                 <Route path="questoes" element={<QuestionsPage />} />
                 <Route path="provas" element={<ExamsPage />} />
-                <Route path="provas/nova" element={<ExamNewPage />} />
+                <Route path="provas/nova" element={<Navigate to="/provas?nova=1" replace />} />
                 <Route path="provas/:id" element={<ExamDetailPage />} />
                 <Route path="turmas" element={<ClassesPage />} />
-                <Route
-                  path="turmas/nova"
-                  element={
-                    <RoleRoute allow={["admin", "gestor", "coordenador"]}>
-                      <ClassroomNewPage />
-                    </RoleRoute>
-                  }
-                />
+                <Route path="turmas/nova" element={<Navigate to="/turmas?nova=1" replace />} />
                 <Route path="alunos" element={<StudentsPage />} />
-                <Route
-                  path="alunos/nova"
-                  element={
-                    <RoleRoute allow={["admin", "gestor", "coordenador", "professor"]}>
-                      <StudentNewPage />
-                    </RoleRoute>
-                  }
-                />
+                <Route path="alunos/nova" element={<RedirectAlunosNova />} />
                 <Route path="turma/:classroomId" element={<ClassroomPage />} />
                 <Route path="escola/resumo" element={<SchoolSummaryPage />} />
                 <Route

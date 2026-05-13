@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/useAuth";
 import { listClassrooms } from "@/api/classes";
 import { createStudent, deleteStudent, listStudents } from "@/api/students";
@@ -9,8 +9,11 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FeedbackMessage } from "@/components/ui/FeedbackMessage";
 import { useConfirm } from "@/components/ui/ConfirmDialog";
+import { TableActionIcon } from "@/components/table/TableActionIcons";
 import { ApiError } from "@/lib/api-client";
 import { parseStudentRow, readExcelFirstSheet } from "@/lib/excel-import";
+import { StudentNewModal } from "@/pages/StudentNewPage";
+import { StudentEditModal, StudentViewModal } from "@/pages/students/StudentDialogs";
 import { StudentsListFilters } from "./students/StudentsListFilters";
 import { StudentImportPanel, type StudentImportReport } from "./students/StudentImportPanel";
 
@@ -87,6 +90,19 @@ export function StudentsPage() {
     },
   });
 
+  const studentViewId = sp.get("ver")?.trim() || null;
+  const studentEditId = sp.get("editar")?.trim() || null;
+  const studentCreateOpen = sp.get("nova") === "1";
+
+  const viewStudent = useMemo(
+    () => (studentViewId ? studentsQ.data?.find((st) => st._id === studentViewId) ?? null : null),
+    [studentsQ.data, studentViewId],
+  );
+  const editStudent = useMemo(
+    () => (studentEditId ? studentsQ.data?.find((st) => st._id === studentEditId) ?? null : null),
+    [studentsQ.data, studentEditId],
+  );
+
   async function handleStudentExcel(file: File) {
     if (!selectedClass) {
       setImportError('Selecione uma turma específica no filtro «Turma» para importar (não use «Todos»).');
@@ -146,6 +162,51 @@ export function StudentsPage() {
   }
 
   const authUser = state.user;
+
+  function openStudentCreate() {
+    const next = new URLSearchParams(sp);
+    next.set("nova", "1");
+    next.delete("ver");
+    next.delete("editar");
+    setSp(next, { replace: false });
+  }
+
+  function closeStudentCreate() {
+    const next = new URLSearchParams(sp);
+    next.delete("nova");
+    next.delete("ver");
+    next.delete("editar");
+    setSp(next, { replace: true });
+  }
+
+  function openStudentView(id: string) {
+    const next = new URLSearchParams(sp);
+    next.set("ver", id);
+    next.delete("nova");
+    next.delete("editar");
+    setSp(next, { replace: false });
+  }
+
+  function closeStudentView() {
+    const next = new URLSearchParams(sp);
+    next.delete("ver");
+    setSp(next, { replace: true });
+  }
+
+  function openStudentEdit(id: string) {
+    const next = new URLSearchParams(sp);
+    next.set("editar", id);
+    next.delete("nova");
+    next.delete("ver");
+    setSp(next, { replace: false });
+  }
+
+  function closeStudentEdit() {
+    const next = new URLSearchParams(sp);
+    next.delete("editar");
+    setSp(next, { replace: true });
+  }
+
   const canCreate =
     authUser.role === "admin" ||
     authUser.role === "gestor" ||
@@ -165,14 +226,31 @@ export function StudentsPage() {
 
   return (
     <div>
+      {studentCreateOpen && canCreate ? (
+        <StudentNewModal
+          open
+          onClose={closeStudentCreate}
+          initialClassroomId={classroomId || undefined}
+        />
+      ) : null}
+      <StudentViewModal
+        open={Boolean(studentViewId && viewStudent)}
+        student={viewStudent}
+        turmaLabel={viewStudent ? classroomLabelById.get(viewStudent.classroomId) ?? "—" : ""}
+        onClose={closeStudentView}
+      />
+      <StudentEditModal
+        open={Boolean(studentEditId && editStudent)}
+        student={editStudent}
+        classroomOptions={classroomOptions}
+        onClose={closeStudentEdit}
+      />
       <section className="panel">
         <div className="section-header">
           <h2>Alunos</h2>
           {canCreate ? (
-            <Button asChild variant="primary">
-              <Link to={classroomId ? `/alunos/nova?classroomId=${encodeURIComponent(classroomId)}` : "/alunos/nova"}>
-                Novo aluno
-              </Link>
+            <Button type="button" variant="primary" onClick={openStudentCreate}>
+              Novo aluno
             </Button>
           ) : null}
         </div>
@@ -225,10 +303,8 @@ export function StudentsPage() {
             description="Ajuste os filtros ou cadastre alunos em Novo aluno."
             action={
               canCreate ? (
-                <Button asChild variant="primary">
-                  <Link to={classroomId ? `/alunos/nova?classroomId=${encodeURIComponent(classroomId)}` : "/alunos/nova"}>
-                    Novo aluno
-                  </Link>
+                <Button type="button" variant="primary" onClick={openStudentCreate}>
+                  Novo aluno
                 </Button>
               ) : null
             }
@@ -262,8 +338,28 @@ export function StudentsPage() {
                       <td className="col-actions">
                         <button
                           type="button"
-                          className="btn-danger-text"
+                          className="ghost btn-compact"
+                          onClick={() => openStudentView(s._id)}
+                          aria-label={`Ver ${s.fullName}`}
+                          title="Ver detalhes"
+                        >
+                          <TableActionIcon name="open" />
+                        </button>
+                        <button
+                          type="button"
+                          className="ghost btn-compact"
+                          onClick={() => openStudentEdit(s._id)}
+                          aria-label={`Editar ${s.fullName}`}
+                          title="Editar"
+                        >
+                          <TableActionIcon name="edit" />
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-danger-text btn-compact"
                           disabled={deleteM.isPending}
+                          aria-label={`Excluir ${s.fullName}`}
+                          title="Excluir"
                           onClick={async () => {
                             const ok = await confirm({
                               title: "Excluir aluno",
@@ -276,7 +372,7 @@ export function StudentsPage() {
                             deleteM.mutate(s._id);
                           }}
                         >
-                          {deleteM.isPending && deleteM.variables === s._id ? "…" : "Excluir"}
+                          {deleteM.isPending && deleteM.variables === s._id ? "…" : <TableActionIcon name="delete" />}
                         </button>
                       </td>
                     ) : null}

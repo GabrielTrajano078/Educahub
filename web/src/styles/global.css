@@ -331,12 +331,31 @@ a:hover {
     font-size: 0.62rem;
     text-align: center;
   }
+
+  /* Área principal acompanha a largura real do dock (recolhido vs expandido). */
+  .app-main {
+    margin-left: var(--sidebar-width-collapsed);
+    width: calc(100% - var(--sidebar-width-collapsed));
+    transition:
+      margin-left 0.24s ease,
+      width 0.24s ease;
+  }
+
+  .sidebar-dock.sidebar-dock--expanded ~ .app-main {
+    margin-left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
+  }
 }
 
 @media (min-width: 769px) and (prefers-reduced-motion: reduce) {
   .sidebar-dock,
   .app-main,
   .sidebar-dock > .sidebar-toggle {
+    transition: none;
+  }
+
+  body[data-app-shell="1"] .modal-backdrop,
+  body[data-app-shell="1"] .confirm-dialog-backdrop {
     transition: none;
   }
 }
@@ -559,9 +578,6 @@ a:hover {
 .app-main {
   position: relative;
   z-index: 1;
-  margin-left: var(--sidebar-width);
-  /* Sidebar é fixed: 100% da largura + margem estoura a viewport e esconde conteúdo à direita. */
-  width: calc(100% - var(--sidebar-width));
   box-sizing: border-box;
   min-width: 0;
   min-height: 100vh;
@@ -1401,9 +1417,17 @@ a.ghost {
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
 }
 
+/* Formulário “Nova questão”: uma coluna cheia — não usar questions-filters-grid aqui (auto-fill esmaga os blocos). */
 .form-grid.question-new-form {
   max-width: none;
   width: 100%;
+  margin-top: 0.75rem;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+.form-grid.question-new-form > .row-actions {
+  justify-content: flex-start;
 }
 
 .form-grid .question-new-meta-row {
@@ -1411,6 +1435,8 @@ a.ghost {
   grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.75fr) minmax(0, 0.85fr);
   gap: 1rem;
   align-items: start;
+  width: 100%;
+  min-width: 0;
 }
 
 .form-grid .question-new-alternatives-row {
@@ -1418,6 +1444,8 @@ a.ghost {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
   align-items: start;
+  width: 100%;
+  min-width: 0;
 }
 
 .form-grid .question-new-alternatives-row .field textarea {
@@ -1557,7 +1585,7 @@ a.ghost {
   margin-bottom: 0.35rem;
 }
 
-/* Modal (prévia de questão) */
+/* Modal (prévia de questão) — no desktop cobre só a coluna do conteúdo (à direita da sidebar). */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -1571,6 +1599,24 @@ a.ghost {
   flex: none;
 }
 
+@media (min-width: 769px) {
+  /* `body[data-app-shell]` / `data-sidebar` vêm do AppLayout (confirm fica fora de .app-shell). */
+  body[data-app-shell="1"] .modal-backdrop,
+  body[data-app-shell="1"] .confirm-dialog-backdrop {
+    inset: auto;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: var(--sidebar-width-collapsed);
+    transition: left 0.24s ease;
+  }
+
+  body[data-app-shell="1"][data-sidebar="full"] .modal-backdrop,
+  body[data-app-shell="1"][data-sidebar="full"] .confirm-dialog-backdrop {
+    left: var(--sidebar-width);
+  }
+}
+
 @keyframes modal-in {
   from {
     opacity: 0;
@@ -1582,7 +1628,7 @@ a.ghost {
 
 .modal-dialog {
   width: 100%;
-  max-width: 640px;
+  max-width: min(640px, calc(100% - 0.25rem));
   max-height: min(85vh, 720px);
   display: flex;
   flex-direction: column;
@@ -1596,13 +1642,28 @@ a.ghost {
   animation: modal-dialog-in 0.22s ease-out;
 }
 
-.modal-dialog--question-new {
-  max-width: min(1040px, calc(100vw - 2rem));
-  max-height: min(92vh, 860px);
+/* Modais de formulário compartilhados (prova, questão, turma, aluno) — ver ModalFormShell */
+.modal-dialog--app-form {
+  max-width: min(1120px, calc(100% - 0.25rem));
+  max-height: min(92vh, 900px);
 }
 
-.modal-dialog--question-new .modal-body {
+.modal-dialog--app-form .modal-body {
   padding: 1.35rem 1.5rem 1.5rem;
+}
+
+.modal-dialog--app-form .modal-body > .modal-form-panel:last-child {
+  margin-bottom: 0;
+}
+
+.modal-dialog--exam-detail {
+  max-height: min(94vh, 920px);
+}
+
+.exam-detail-modal-scroll {
+  max-height: min(78vh, 760px);
+  overflow-y: auto;
+  padding-right: 0.25rem;
 }
 
 @keyframes modal-dialog-in {
@@ -1909,6 +1970,7 @@ a.ghost {
   .app-main {
     margin-left: 0;
     width: 100%;
+    transition: none;
   }
 
   .sidebar-footer {

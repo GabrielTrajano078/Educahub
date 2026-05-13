@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/useAuth";
 import { deleteExam, listExams } from "@/api/exams";
 import { SelectField, type SelectFieldOption } from "@/components/SelectField";
@@ -14,6 +14,8 @@ import { axisLabel, CURRICULUM_AXIS_CODES, type CurriculumAxisCode } from "@/lib
 import { copy } from "@/lib/copy";
 import { disciplineLabel } from "@/lib/discipline";
 import { formatApiError } from "@/lib/format-api-error";
+import { TableActionIcon } from "@/components/table/TableActionIcons";
+import { ExamDetailModal } from "@/pages/ExamDetailModal";
 import { ExamNewModal } from "./ExamNewPage";
 
 const DISCIPLINE_FILTER_OPTIONS: SelectFieldOption[] = [
@@ -48,51 +50,9 @@ function parseAxis(v: string | null): "" | CurriculumAxisCode {
   return "";
 }
 
-const actionIconProps = {
-  width: 16,
-  height: 16,
-  viewBox: "0 0 24 24",
-  fill: "none" as const,
-  stroke: "currentColor",
-  strokeWidth: 1.8,
-  strokeLinecap: "round" as const,
-  strokeLinejoin: "round" as const,
-  "aria-hidden": true,
-};
-
-function ActionIcon({ name }: Readonly<{ name: "open" | "edit" | "delete" }>) {
-  if (name === "open") {
-    return (
-      <svg {...actionIconProps}>
-        <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z" />
-        <circle cx="12" cy="12" r="3" />
-      </svg>
-    );
-  }
-  if (name === "edit") {
-    return (
-      <svg {...actionIconProps}>
-        <path d="M12 20h9" />
-        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
-      </svg>
-    );
-  }
-  return (
-    <svg {...actionIconProps}>
-      <path d="M3 6h18" />
-      <path d="M8 6V4h8v2" />
-      <path d="M19 6l-1 14H6L5 6" />
-      <path d="M10 11v5" />
-      <path d="M14 11v5" />
-    </svg>
-  );
-}
-
 export function ExamsPage() {
   const { state } = useAuth();
   const [sp, setSp] = useSearchParams();
-  const [createOpen, setCreateOpen] = useState(false);
-  const [editingExamId, setEditingExamId] = useState<string | null>(null);
   const [deleteErr, setDeleteErr] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<FeedbackModalState | null>(null);
   const confirm = useConfirm();
@@ -102,6 +62,10 @@ export function ExamsPage() {
   const framework = parseFramework(sp.get("framework"));
   const descriptor = sp.get("descriptor") ?? "";
   const axis = parseAxis(sp.get("axis"));
+
+  const examCreateOpen = sp.get("nova") === "1";
+  const examEditId = sp.get("edit")?.trim() || null;
+  const examViewId = sp.get("ver")?.trim() || null;
 
   const setDiscipline = (v: string) => {
     const next = new URLSearchParams(sp);
@@ -161,6 +125,44 @@ export function ExamsPage() {
     },
   });
 
+  function openExamCreate() {
+    const next = new URLSearchParams(sp);
+    next.set("nova", "1");
+    next.delete("edit");
+    next.delete("ver");
+    setSp(next, { replace: false });
+  }
+
+  function openExamEdit(id: string) {
+    const next = new URLSearchParams(sp);
+    next.set("edit", id);
+    next.delete("nova");
+    next.delete("ver");
+    setSp(next, { replace: false });
+  }
+
+  function openExamView(id: string) {
+    const next = new URLSearchParams(sp);
+    next.set("ver", id);
+    next.delete("nova");
+    next.delete("edit");
+    setSp(next, { replace: false });
+  }
+
+  function closeExamModal() {
+    const next = new URLSearchParams(sp);
+    next.delete("nova");
+    next.delete("edit");
+    next.delete("ver");
+    setSp(next, { replace: true });
+  }
+
+  function closeExamViewModal() {
+    const next = new URLSearchParams(sp);
+    next.delete("ver");
+    setSp(next, { replace: true });
+  }
+
   if (state.status !== "authenticated") {
     return null;
   }
@@ -168,12 +170,20 @@ export function ExamsPage() {
   return (
     <div>
       <FeedbackModal feedback={feedback} onClose={() => setFeedback(null)} />
-      {createOpen ? <ExamNewModal open onClose={() => setCreateOpen(false)} onCreated={() => setCreateOpen(false)} /> : null}
-      {editingExamId ? <ExamNewModal open examId={editingExamId} onClose={() => setEditingExamId(null)} /> : null}
+      {examCreateOpen || examEditId ? (
+        <ExamNewModal
+          open
+          onClose={closeExamModal}
+          examId={examEditId ?? undefined}
+          onCreated={() => closeExamModal()}
+          onUpdated={() => closeExamModal()}
+        />
+      ) : null}
+      <ExamDetailModal open={Boolean(examViewId)} examId={examViewId} onClose={closeExamViewModal} />
       <section className="panel">
         <div className="section-header">
           <h2>Provas</h2>
-          <Button type="button" variant="primary" onClick={() => setCreateOpen(true)}>
+          <Button type="button" variant="primary" onClick={openExamCreate}>
             Nova prova
           </Button>
         </div>
@@ -244,7 +254,7 @@ export function ExamsPage() {
             title="Nenhuma prova encontrada"
             description="Ajuste os filtros ou crie uma prova diagnóstica ou simulado para acompanhar resultados por turma."
             action={
-              <Button type="button" variant="primary" onClick={() => setCreateOpen(true)}>
+              <Button type="button" variant="primary" onClick={openExamCreate}>
                 Criar prova
               </Button>
             }
@@ -274,17 +284,23 @@ export function ExamsPage() {
                     </td>
                     <td>{e.questionCount ?? "—"}</td>
                     <td className="col-actions">
-                      <Link to={`/provas/${e._id}`} className="ghost btn-compact" aria-label={`Abrir ${e.title}`} title="Abrir">
-                        <ActionIcon name="open" />
-                      </Link>
                       <button
                         type="button"
                         className="ghost btn-compact"
-                        onClick={() => setEditingExamId(e._id)}
+                        onClick={() => openExamView(e._id)}
+                        aria-label={`Ver detalhes de ${e.title}`}
+                        title="Ver detalhes"
+                      >
+                        <TableActionIcon name="open" />
+                      </button>
+                      <button
+                        type="button"
+                        className="ghost btn-compact"
+                        onClick={() => openExamEdit(e._id)}
                         aria-label={`Editar ${e.title}`}
                         title="Editar"
                       >
-                        <ActionIcon name="edit" />
+                        <TableActionIcon name="edit" />
                       </button>
                       <button
                         type="button"
@@ -304,7 +320,7 @@ export function ExamsPage() {
                           deleteM.mutate(e._id);
                         }}
                       >
-                        {deleteM.isPending && deleteM.variables === e._id ? "…" : <ActionIcon name="delete" />}
+                        {deleteM.isPending && deleteM.variables === e._id ? "…" : <TableActionIcon name="delete" />}
                       </button>
                     </td>
                   </tr>
