@@ -1,11 +1,12 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/useAuth";
 import { listClassrooms } from "@/api/classes";
 import { listSchools } from "@/api/schools";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { FeedbackMessage } from "@/components/ui/FeedbackMessage";
+import { ClassroomNewModal } from "@/pages/ClassroomNewPage";
 import { ClassesListFilters } from "./classes/ClassesListFilters";
 import { ClassroomImportPanel } from "./classes/ClassroomImportPanel";
 import {
@@ -17,6 +18,7 @@ import { RegisteredClassesTable } from "./classes/RegisteredClassesTable";
 export function ClassesPage() {
   const qc = useQueryClient();
   const { state } = useAuth();
+  const [sp, setSp] = useSearchParams();
   const [schoolFilter, setSchoolFilter] = useState("");
   const [gradeFilter, setGradeFilter] = useState("");
   const [nameContains, setNameContains] = useState("");
@@ -105,15 +107,29 @@ export function ClassesPage() {
 
   const { user: u } = state;
   const schools = schoolsQ.data ?? [];
+  const turmaCreateOpen = sp.get("nova") === "1";
+
+  function openTurmaCreate() {
+    const next = new URLSearchParams(sp);
+    next.set("nova", "1");
+    setSp(next, { replace: false });
+  }
+
+  function closeTurmaCreate() {
+    const next = new URLSearchParams(sp);
+    next.delete("nova");
+    setSp(next, { replace: true });
+  }
 
   return (
     <div>
+      {turmaCreateOpen && canCreate ? <ClassroomNewModal open onClose={closeTurmaCreate} /> : null}
       <section className="panel">
         <div className="section-header">
           <h2>Turmas</h2>
           {canCreate ? (
-            <Button asChild variant="primary">
-              <Link to="/turmas/nova">Nova turma</Link>
+            <Button type="button" variant="primary" onClick={openTurmaCreate}>
+              Nova turma
             </Button>
           ) : null}
         </div>

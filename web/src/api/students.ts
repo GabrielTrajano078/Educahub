@@ -37,3 +37,13 @@ export async function createStudent(body: CreateStudentBody): Promise<{ id: stri
 export async function deleteStudent(id: string): Promise<void> {
   await apiFetch<null>(`/api/students/${encodeURIComponent(id)}`, { method: "DELETE" });
 }
+
+export type UpdateStudentBody = {
+  fullName?: string;
+  registrationCode?: string;
+  classroomId?: string;
+};
+
+export async function updateStudent(id: string, body: UpdateStudentBody): Promise<void> {
+  await apiFetch<null>(`/api/students/${encodeURIComponent(id)}`, { method: "PATCH", body });
+}

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/useAuth";
 import { listClassrooms, type Classroom } from "@/api/classes";
@@ -7,6 +7,7 @@ import { createExam, fetchExam, updateExam, type ExamDetail, type ExamTypeApi } 
 import { listQuestions, listQuestionDescriptors, type QuestionListItem } from "@/api/questions";
 import { listSchools } from "@/api/schools";
 import type { School } from "@/schemas/school";
+import { ModalFormPanel, ModalFormShell } from "@/components/ModalFormShell";
 import { SelectField, type SelectFieldOption } from "@/components/SelectField";
 import { Button } from "@/components/ui/Button";
 import { FeedbackModal, type FeedbackModalState } from "@/components/ui/FeedbackModal";
@@ -111,7 +112,7 @@ function ExamMetadataFields({
   onExamFlowChange,
 }: ExamMetadataFieldsProps) {
   return (
-    <section className="panel">
+    <ModalFormPanel>
       <div className="form-grid questions-filters-grid">
         <label className="field field--span-2">
           <span>Título</span>
@@ -179,7 +180,7 @@ function ExamMetadataFields({
           className="field--span-2"
         />
       </div>
-    </section>
+    </ModalFormPanel>
   );
 }
 
@@ -215,13 +216,15 @@ function QuestionBankPanel({
   onAddQuestion,
 }: QuestionBankPanelProps) {
   return (
-    <section className="panel">
-      <p className="muted small" style={{ marginTop: 0 }}>
-        Escolha o <strong>descritor</strong> no banco; as questões aparecem logo abaixo. Use o campo de enunciado para restringir pelo{" "}
-        <strong>começo</strong> do texto (ex.: <strong>n</strong> mostra só enunciados que começam com “n”). Clique em{" "}
-        <strong>Adicionar</strong> para montar a prova.
-      </p>
-
+    <ModalFormPanel
+      intro={
+        <p className="muted small" style={{ marginTop: 0 }}>
+          Escolha o <strong>descritor</strong> no banco; as questões aparecem logo abaixo. Use o campo de enunciado para restringir pelo{" "}
+          <strong>começo</strong> do texto (ex.: <strong>n</strong> mostra só enunciados que começam com “n”). Clique em{" "}
+          <strong>Adicionar</strong> para montar a prova.
+        </p>
+      }
+    >
       <div className="form-grid questions-filters-grid">
         {descriptorOptions.length > 0 ? (
           <SelectField
@@ -303,7 +306,7 @@ function QuestionBankPanel({
           Nenhuma questão cadastrada para este descritor.
         </p>
       ) : null}
-    </section>
+    </ModalFormPanel>
   );
 }
 
@@ -318,7 +321,7 @@ type PickedQuestionsPanelProps = Readonly<{
 
 function PickedQuestionsPanel({ picked, submitLabel, submitDisabled, onSubmit, onMovePicked, onRemovePicked }: PickedQuestionsPanelProps) {
   return (
-    <section className="panel">
+    <ModalFormPanel>
       <div className="section-header">
         <h3 className="small" style={{ margin: 0, fontSize: "0.95rem" }}>
           Questões na prova ({picked.length})
@@ -354,7 +357,7 @@ function PickedQuestionsPanel({ picked, submitLabel, submitDisabled, onSubmit, o
           Adicione questões do banco acima para montar a prova.
         </p>
       )}
-    </section>
+    </ModalFormPanel>
   );
 }
 
@@ -385,8 +388,6 @@ export function ExamNewModal({ open, onClose, onCreated, examId, onUpdated }: Ex
 function ExamFormModal({ open, onClose, onCreated, examId, onUpdated, initialExam }: ExamFormModalProps) {
   const { state } = useAuth();
   const qc = useQueryClient();
-  const titleId = useId();
-  const closeRef = useRef<HTMLButtonElement>(null);
   const [feedback, setFeedback] = useState<FeedbackModalState | null>(null);
   const [createdId, setCreatedId] = useState<string | null>(null);
 
@@ -401,21 +402,6 @@ function ExamFormModal({ open, onClose, onCreated, examId, onUpdated, initialExa
   const [searchText, setSearchText] = useState("");
   const [picked, setPicked] = useState<QuestionListItem[]>(() => pickedQuestionsFromExam(initialExam));
   const isEditing = Boolean(examId);
-
-  useEffect(() => {
-    if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    closeRef.current?.focus();
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-    globalThis.addEventListener("keydown", onKey);
-    return () => {
-      document.body.style.overflow = prev;
-      globalThis.removeEventListener("keydown", onKey);
-    };
-  }, [open, onClose]);
 
   const user = state.status === "authenticated" ? state.user : null;
 
@@ -590,65 +576,57 @@ function ExamFormModal({ open, onClose, onCreated, examId, onUpdated, initialExa
   }
 
   return (
-    <div className="modal-backdrop">
-      <FeedbackModal feedback={feedback} onClose={handleCloseFeedback} />
-      <dialog open className="modal-dialog modal-dialog--question-new" aria-labelledby={titleId}>
-        <header className="modal-header">
-          <h2 id={titleId} className="modal-title">
-            {isEditing ? "Editar prova" : "Nova prova"}
-          </h2>
-          <button ref={closeRef} type="button" className="modal-close" onClick={onClose} aria-label="Fechar">
-            ×
-          </button>
-        </header>
-        <div className="modal-body">
-          <ExamMetadataFields
-            title={title}
-            onTitleChange={setTitle}
-            showSchoolPicker={authUser.role === "admin" || authUser.role === "gestor"}
-            schoolValue={schoolPick || (schoolsQuery.data?.length === 1 ? schoolsQuery.data[0]._id : "")}
-            schools={schoolsQuery.data ?? []}
-            schoolsLoading={schoolsQuery.isLoading}
-            onSchoolPickChange={setSchoolPick}
-            classroomId={classroomId}
-            classrooms={classesQuery.data ?? []}
-            classesLoading={classesQuery.isLoading}
-            effectiveSchoolId={effectiveSchoolId}
-            onClassroomIdChange={setClassroomId}
-            discipline={discipline}
-            onDisciplineChange={handleDisciplineChange}
-            grade={grade}
-            onGradeChange={handleGradeChange}
-            examFlow={examFlow}
-            onExamFlowChange={(v) => setExamFlow(v as ExamFlow)}
-          />
+    <ModalFormShell
+      open={open}
+      title={isEditing ? "Editar prova" : "Nova prova"}
+      onClose={onClose}
+      beforeDialog={<FeedbackModal feedback={feedback} onClose={handleCloseFeedback} />}
+    >
+      <ExamMetadataFields
+        title={title}
+        onTitleChange={setTitle}
+        showSchoolPicker={authUser.role === "admin" || authUser.role === "gestor"}
+        schoolValue={schoolPick || (schoolsQuery.data?.length === 1 ? schoolsQuery.data[0]._id : "")}
+        schools={schoolsQuery.data ?? []}
+        schoolsLoading={schoolsQuery.isLoading}
+        onSchoolPickChange={setSchoolPick}
+        classroomId={classroomId}
+        classrooms={classesQuery.data ?? []}
+        classesLoading={classesQuery.isLoading}
+        effectiveSchoolId={effectiveSchoolId}
+        onClassroomIdChange={setClassroomId}
+        discipline={discipline}
+        onDisciplineChange={handleDisciplineChange}
+        grade={grade}
+        onGradeChange={handleGradeChange}
+        examFlow={examFlow}
+        onExamFlowChange={(v) => setExamFlow(v as ExamFlow)}
+      />
 
-          <QuestionBankPanel
-            descriptorOptions={descriptorOptions}
-            descriptorValue={effectiveDescriptorFilter}
-            descriptorsLoading={descriptorsQuery.isLoading}
-            descriptorsError={descriptorsQuery.isError}
-            onDescriptorChange={handleDescriptorChange}
-            searchText={searchText}
-            onSearchTextChange={setSearchText}
-            listLoading={listLoading}
-            listError={listError}
-            readyForList={readyForList}
-            filteredQuestions={filteredQuestions}
-            totalQuestions={questionsBankQuery.data?.length ?? 0}
-            onAddQuestion={addQuestion}
-          />
+      <QuestionBankPanel
+        descriptorOptions={descriptorOptions}
+        descriptorValue={effectiveDescriptorFilter}
+        descriptorsLoading={descriptorsQuery.isLoading}
+        descriptorsError={descriptorsQuery.isError}
+        onDescriptorChange={handleDescriptorChange}
+        searchText={searchText}
+        onSearchTextChange={setSearchText}
+        listLoading={listLoading}
+        listError={listError}
+        readyForList={readyForList}
+        filteredQuestions={filteredQuestions}
+        totalQuestions={questionsBankQuery.data?.length ?? 0}
+        onAddQuestion={addQuestion}
+      />
 
-          <PickedQuestionsPanel
-            picked={picked}
-            submitLabel={submitLabel}
-            submitDisabled={m.isPending}
-            onSubmit={() => m.mutate()}
-            onMovePicked={movePicked}
-            onRemovePicked={removePicked}
-          />
-        </div>
-      </dialog>
-    </div>
+      <PickedQuestionsPanel
+        picked={picked}
+        submitLabel={submitLabel}
+        submitDisabled={m.isPending}
+        onSubmit={() => m.mutate()}
+        onMovePicked={movePicked}
+        onRemovePicked={removePicked}
+      />
+    </ModalFormShell>
   );
 }

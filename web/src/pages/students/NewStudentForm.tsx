@@ -19,8 +19,12 @@ export type NewStudentFormProps = Readonly<{
   registrationCode: string;
   onRegistrationCodeChange: (v: string) => void;
   formError: string | null;
-  createM: UseMutationResult<{ id: string }, unknown, NewStudentFormPayload, unknown>;
+  createM: UseMutationResult<unknown, unknown, NewStudentFormPayload, unknown>;
   onSubmit: (e: FormEvent) => void;
+  /** Texto do botão principal (ex.: edição). */
+  submitLabel?: string;
+  /** Texto durante envio. */
+  pendingLabel?: string;
 }>;
 
 export function NewStudentForm({
@@ -34,6 +38,8 @@ export function NewStudentForm({
   formError,
   createM,
   onSubmit,
+  submitLabel = "Cadastrar aluno",
+  pendingLabel = "Salvando…",
 }: NewStudentFormProps) {
   return (
     <form className="form-grid" style={{ maxWidth: 480, marginTop: "1rem" }} onSubmit={onSubmit}>
@@ -61,7 +67,7 @@ export function NewStudentForm({
       ) : null}
       <div className="row-actions" style={{ gridColumn: "1 / -1" }}>
         <Button type="submit" variant="primary" disabled={createM.isPending || !classroomId}>
-          {createM.isPending ? "Salvando…" : "Cadastrar aluno"}
+          {createM.isPending ? pendingLabel : submitLabel}
         </Button>
       </div>
     </form>

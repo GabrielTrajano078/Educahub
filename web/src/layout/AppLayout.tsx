@@ -100,6 +100,15 @@ export function AppLayout() {
     return () => window.clearTimeout(t);
   }, [sidebarExpanded, updateSidebarToggleTop]);
 
+  useEffect(() => {
+    document.body.dataset.appShell = "1";
+    document.body.dataset.sidebar = sidebarExpanded ? "full" : "compact";
+    return () => {
+      delete document.body.dataset.appShell;
+      delete document.body.dataset.sidebar;
+    };
+  }, [sidebarExpanded]);
+
   const toggleSidebar = useCallback(() => {
     setSidebarExpanded((prev) => {
       const next = !prev;

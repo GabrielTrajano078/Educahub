@@ -73,7 +73,7 @@ export function DashboardHomePage() {
 
         <div className="row-actions dashboard-quick-actions">
           <Button asChild variant="primary">
-            <Link to="/provas/nova">Nova prova</Link>
+            <Link to="/provas?nova=1">Nova prova</Link>
           </Button>
           <Button asChild variant="ghost">
             <Link to="/provas">Ver provas</Link>

@@ -45,7 +45,7 @@ export function RegisteredClassesTable({
         action={
           canCreate ? (
             <Button asChild variant="primary">
-              <Link to="/turmas/nova">Nova turma</Link>
+              <Link to="/turmas?nova=1">Nova turma</Link>
             </Button>
           ) : null
         }
