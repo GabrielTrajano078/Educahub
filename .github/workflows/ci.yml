@@ -52,3 +52,113 @@ jobs:
       - name: Run tests
         working-directory: web
         run: npm test
+
+  # Stack: Mongo (e2e/infra) + API na 3001 + Vite pelo webServer do Playwright (127.0.0.1:5173).
+  # API e testes no mesmo step para o processo do backend não ser encerrado entre steps.
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            web/package-lock.json
+            backend/package-lock.json
+            e2e/playwright/package-lock.json
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies (web, backend, Playwright)
+        run: |
+          npm ci --prefix web
+          npm ci --prefix backend
+          npm ci --prefix e2e/playwright
+
+      - name: Install Playwright Chromium
+        working-directory: e2e/playwright
+        run: npx playwright install chromium --with-deps
+
+      - name: Subir Mongo (compose E2E)
+        run: |
+          python3 e2e/run_e2e.py down || true
+          python3 e2e/run_e2e.py up --force
+
+      - name: Subir API, rodar Playwright e encerrar
+        env:
+          CI: "true"
+          DATABASE_URL: mongodb://127.0.0.1:27018/spas_saeb?directConnection=true
+          JWT_SECRET: ci_jwt_secret_at_least_8_chars
+          PORT: "3001"
+          NODE_ENV: development
+          E2E_BASE_URL: http://127.0.0.1:5173
+          E2E_SKIP_API_SMOKE: "0"
+        run: |
+          set -e
+          cd backend
+          npm run dev &
+          API_PID=$!
+          cd ..
+          echo "Aguardando /health na API..."
+          for i in $(seq 1 45); do
+            if curl -sf "http://127.0.0.1:3001/health" > /dev/null; then
+              echo "API pronta."
+              break
+            fi
+            if [ "$i" -eq 45 ]; then
+              echo "Timeout aguardando API."
+              kill "$API_PID" 2>/dev/null || true
+              python3 e2e/run_e2e.py down || true
+              exit 1
+            fi
+            sleep 2
+          done
+          cd e2e/playwright
+          npx playwright test
+          STATUS=$?
+          cd ../..
+          kill "$API_PID" 2>/dev/null || true
+          wait "$API_PID" 2>/dev/null || true
+          python3 e2e/run_e2e.py down || true
+          exit "$STATUS"
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: e2e/playwright/playwright-report/
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload Playwright test-results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results
+          path: e2e/playwright/test-results/
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload E2E logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-logs
+          path: e2e/.logs/
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Encerrar stack E2E (compose)
+        if: always()
+        run: python3 e2e/run_e2e.py down || true

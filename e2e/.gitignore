@@ -1,0 +1,8 @@
+.env
+.e2e-state.json
+.logs/
+infra/.env.run
+playwright/node_modules/
+playwright/playwright-report/
+playwright/test-results/
+playwright/.auth/
