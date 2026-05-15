@@ -12,3 +12,17 @@ export const listClassroomsSchema = z.object({
   grade: gradeSchema.optional(),
   nameContains: z.string().trim().max(200).optional(),
 });
+
+export const classroomIdParamsSchema = z.object({
+  id: objectIdSchema,
+});
+
+export const updateClassroomSchema = z
+  .object({
+    schoolId: objectIdSchema.optional(),
+    name: z.string().trim().min(1).optional(),
+    grade: gradeSchema.optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "Nenhum campo para atualizar.",
+  });

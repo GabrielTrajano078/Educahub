@@ -37,6 +37,12 @@ export const createQuestionSchema = z.object({
   answer: answerSchema,
 });
 
+export const questionIdParamsSchema = z.object({
+  id: objectIdSchema,
+});
+
+export const updateQuestionSchema = createQuestionSchema.partial();
+
 export const questionSuggestionsSchema = z.object({
   classroomId: objectIdSchema,
   discipline: disciplineSchema,

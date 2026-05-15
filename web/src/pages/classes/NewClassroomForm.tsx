@@ -1,6 +1,4 @@
 import type { ComponentProps } from "react";
-import type { UseMutationResult } from "@tanstack/react-query";
-import type { CreateClassroomBody } from "@/api/classes";
 import { SelectField } from "@/components/SelectField";
 import { Button } from "@/components/ui/Button";
 import { FeedbackMessage } from "@/components/ui/FeedbackMessage";
@@ -19,7 +17,7 @@ export type NewClassroomFormProps = Readonly<{
   isCoord: boolean;
   user: User;
   formError: string | null;
-  createM: UseMutationResult<{ id: string }, unknown, CreateClassroomBody, unknown>;
+  createM: { isPending: boolean };
   onSubmit: NonNullable<ComponentProps<"form">["onSubmit"]>;
 }>;
 
@@ -82,7 +80,7 @@ export function NewClassroomForm({
       ) : null}
       <div className="row-actions" style={{ gridColumn: "1 / -1" }}>
         <Button type="submit" variant="primary" disabled={createM.isPending || coordBlocked}>
-          {createM.isPending ? "Salvando…" : "Cadastrar turma"}
+          {createM.isPending ? "Salvando…" : "Salvar turma"}
         </Button>
       </div>
     </form>

@@ -7,6 +7,7 @@ import { createStudent, deleteStudent, listStudents } from "@/api/students";
 import { listSchools } from "@/api/schools";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { FeedbackModal, type FeedbackModalState } from "@/components/ui/FeedbackModal";
 import { FeedbackMessage } from "@/components/ui/FeedbackMessage";
 import { useConfirm } from "@/components/ui/ConfirmDialog";
 import { TableActionIcon } from "@/components/table/TableActionIcons";
@@ -31,6 +32,7 @@ export function StudentsPage() {
   const [gradeFilter, setGradeFilter] = useState("");
   const [nameContains, setNameContains] = useState("");
   const [deleteErr, setDeleteErr] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<FeedbackModalState | null>(null);
   const [importBusy, setImportBusy] = useState(false);
   const [importReport, setImportReport] = useState<StudentImportReport | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
@@ -83,6 +85,7 @@ export function StudentsPage() {
     mutationFn: (id: string) => deleteStudent(id),
     onSuccess: () => {
       setDeleteErr(null);
+      setFeedback({ variant: "success", message: "Aluno excluído com sucesso." });
       void qc.invalidateQueries({ queryKey: ["students"] });
     },
     onError: (e: unknown) => {
@@ -226,6 +229,7 @@ export function StudentsPage() {
 
   return (
     <div>
+      <FeedbackModal feedback={feedback} onClose={() => setFeedback(null)} />
       {studentCreateOpen && canCreate ? (
         <StudentNewModal
           open
