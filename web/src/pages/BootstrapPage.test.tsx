@@ -16,7 +16,7 @@ describe("BootstrapPage", () => {
     mockedBootstrapAdmin.mockResolvedValue({ id: "507f1f77bcf86cd799439011" });
     const { container } = renderPage(<BootstrapPage />);
 
-    const form = container.querySelector("form.auth-form");
+    const form = container.querySelector("form.login-form");
     expect(form).toBeTruthy();
     expect((form as HTMLFormElement).noValidate).toBe(true);
 
