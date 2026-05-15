@@ -214,7 +214,7 @@ def cmd_all(args: argparse.Namespace) -> None:
 def cmd_setup_only(_args: argparse.Namespace) -> None:
     print(
         "setup-only: sem projeto Playwright de autenticação (storageState). "
-        "Crie admin em /bootstrap ou use seed do backend antes dos fluxos logados.",
+        "Crie admin em /signup ou use seed do backend antes dos fluxos logados.",
         flush=True,
     )
 

@@ -36,7 +36,7 @@ export default function App() {
           <ConfirmProvider>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
-              <Route path="/bootstrap" element={<BootstrapPage />} />
+              <Route path="/signup" element={<BootstrapPage />} />
               <Route
                 element={
                   <ProtectedRoute>

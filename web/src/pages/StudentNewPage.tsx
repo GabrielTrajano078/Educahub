@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { type FormEvent, useEffect, useState } from "react";
+import { type ComponentProps, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/useAuth";
 import { listClassrooms } from "@/api/classes";
 import { createStudent } from "@/api/students";
-import { ApiError } from "@/lib/api-client";
 import { ModalFormPanel, ModalFormShell } from "@/components/ModalFormShell";
 import { FeedbackModal, type FeedbackModalState } from "@/components/ui/FeedbackModal";
+import type { User } from "@/schemas/auth";
 import { NewStudentForm, type NewStudentFormPayload } from "./students/NewStudentForm";
 
 type StudentNewModalProps = Readonly<{
@@ -16,7 +16,14 @@ type StudentNewModalProps = Readonly<{
   initialClassroomId?: string;
 }>;
 
-export function StudentNewModal({ open, onClose, initialClassroomId }: StudentNewModalProps) {
+type StudentNewModalMountedProps = Readonly<{
+  open: boolean;
+  onClose: () => void;
+  initialClassroomId?: string;
+  user: User;
+}>;
+
+function StudentNewModalMounted({ open, onClose, initialClassroomId, user }: StudentNewModalMountedProps) {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [classroomId, setClassroomId] = useState(() => initialClassroomId ?? "");
@@ -25,17 +32,6 @@ export function StudentNewModal({ open, onClose, initialClassroomId }: StudentNe
   const [formError, setFormError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<FeedbackModalState | null>(null);
   const [pendingNavigate, setPendingNavigate] = useState<string | null>(null);
-
-  const { state } = useAuth();
-  const user = state.status === "authenticated" ? state.user : null;
-
-  useEffect(() => {
-    if (!open) return;
-    setClassroomId(initialClassroomId ?? "");
-    setFullName("");
-    setRegistrationCode("");
-    setFormError(null);
-  }, [open, initialClassroomId]);
 
   const classesQ = useQuery({
     queryKey: ["classes", "student-new-modal"],
@@ -62,14 +58,12 @@ export function StudentNewModal({ open, onClose, initialClassroomId }: StudentNe
       setFeedback({ variant: "success", message: "Aluno cadastrado com sucesso." });
     },
     onError: (e: unknown) => {
-      let msg = "Erro.";
-      if (e instanceof ApiError) msg = e.message;
-      else if (e instanceof Error) msg = e.message;
-      setFeedback({ variant: "error", message: msg });
+      const message = e instanceof Error ? e.message : "Erro.";
+      setFeedback({ variant: "error", message });
     },
   });
 
-  function handleSubmit(e: FormEvent) {
+  const handleSubmit: NonNullable<ComponentProps<"form">["onSubmit"]> = (e) => {
     e.preventDefault();
     setFormError(null);
     if (!classroomId.trim()) {
@@ -83,7 +77,7 @@ export function StudentNewModal({ open, onClose, initialClassroomId }: StudentNe
       return;
     }
     createM.mutate({ classroomId, fullName: fn, registrationCode: rc });
-  }
+  };
 
   function handleCloseFeedback() {
     setFeedback(null);
@@ -93,14 +87,6 @@ export function StudentNewModal({ open, onClose, initialClassroomId }: StudentNe
       navigate(to);
       onClose();
     }
-  }
-
-  if (!open) {
-    return null;
-  }
-
-  if (state.status !== "authenticated" || !user) {
-    return null;
   }
 
   const classroomOptions = (classesQ.data ?? []).map((c) => ({
@@ -131,5 +117,29 @@ export function StudentNewModal({ open, onClose, initialClassroomId }: StudentNe
         />
       </ModalFormPanel>
     </ModalFormShell>
+  );
+}
+
+export function StudentNewModal({ open, onClose, initialClassroomId }: StudentNewModalProps) {
+  const { state } = useAuth();
+
+  if (!open) {
+    return null;
+  }
+
+  if (state.status !== "authenticated") {
+    return null;
+  }
+
+  const user = state.user;
+
+  return (
+    <StudentNewModalMounted
+      key={initialClassroomId ?? ""}
+      open={open}
+      onClose={onClose}
+      initialClassroomId={initialClassroomId}
+      user={user}
+    />
   );
 }

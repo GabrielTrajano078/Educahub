@@ -1,5 +1,4 @@
-import type { FormEvent } from "react";
-import { useEffect, useState } from "react";
+import { type ComponentProps, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { type Student, type UpdateStudentBody, updateStudent } from "@/api/students";
 import { ModalFormPanel, ModalFormShell } from "@/components/ModalFormShell";
@@ -48,25 +47,23 @@ type StudentEditModalProps = Readonly<{
   onClose: () => void;
 }>;
 
-export function StudentEditModal({ open, student, classroomOptions, onClose }: StudentEditModalProps) {
+type StudentEditModalInnerProps = Readonly<{
+  open: boolean;
+  student: Student;
+  classroomOptions: readonly { value: string; label: string }[];
+  onClose: () => void;
+}>;
+
+function StudentEditModalInner({ open, student, classroomOptions, onClose }: StudentEditModalInnerProps) {
   const qc = useQueryClient();
   const [feedback, setFeedback] = useState<FeedbackModalState | null>(null);
-  const [classroomId, setClassroomId] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [registrationCode, setRegistrationCode] = useState("");
+  const [classroomId, setClassroomId] = useState(student.classroomId);
+  const [fullName, setFullName] = useState(student.fullName);
+  const [registrationCode, setRegistrationCode] = useState(student.registrationCode);
   const [formError, setFormError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!open || !student) return;
-    setClassroomId(student.classroomId);
-    setFullName(student.fullName);
-    setRegistrationCode(student.registrationCode);
-    setFormError(null);
-  }, [open, student]);
 
   const editM = useMutation({
     mutationFn: async (payload: NewStudentFormPayload) => {
-      if (!student) throw new Error("Aluno inválido.");
       const body: UpdateStudentBody = {
         fullName: payload.fullName,
         registrationCode: payload.registrationCode,
@@ -93,10 +90,9 @@ export function StudentEditModal({ open, student, classroomOptions, onClose }: S
     }
   }
 
-  function handleSubmit(e: FormEvent) {
+  const handleSubmit: NonNullable<ComponentProps<"form">["onSubmit"]> = (e) => {
     e.preventDefault();
     setFormError(null);
-    if (!student) return;
     if (!classroomId.trim()) {
       setFeedback({ variant: "warning", message: "Selecione a turma." });
       return;
@@ -108,11 +104,7 @@ export function StudentEditModal({ open, student, classroomOptions, onClose }: S
       return;
     }
     editM.mutate({ classroomId, fullName: fn, registrationCode: rc });
-  }
-
-  if (!open || !student) {
-    return null;
-  }
+  };
 
   return (
     <ModalFormShell
@@ -138,5 +130,21 @@ export function StudentEditModal({ open, student, classroomOptions, onClose }: S
         />
       </ModalFormPanel>
     </ModalFormShell>
+  );
+}
+
+export function StudentEditModal({ open, student, classroomOptions, onClose }: StudentEditModalProps) {
+  if (!open || !student) {
+    return null;
+  }
+
+  return (
+    <StudentEditModalInner
+      key={student._id}
+      open={open}
+      student={student}
+      classroomOptions={classroomOptions}
+      onClose={onClose}
+    />
   );
 }
