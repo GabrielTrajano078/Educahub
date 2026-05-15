@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { type ComponentProps, useEffect, useState } from "react";
+import { type ComponentProps, useState } from "react";
 import { useAuth } from "@/auth/useAuth";
 import { createClassroom } from "@/api/classes";
 import { listSchools } from "@/api/schools";
@@ -34,13 +34,6 @@ export function ClassroomNewModal({ open, onClose }: ClassroomNewModalProps) {
   });
 
   const effectiveSchoolId = isCoord && user?.schoolId ? user.schoolId : schoolId;
-
-  useEffect(() => {
-    if (!open) return;
-    if (isCoord && user?.schoolId) {
-      setSchoolId(user.schoolId);
-    }
-  }, [open, isCoord, user?.schoolId]);
 
   const createM = useMutation({
     mutationFn: createClassroom,

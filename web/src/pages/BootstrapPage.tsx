@@ -15,6 +15,7 @@ export function BootstrapPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   async function handleSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -42,46 +43,82 @@ export function BootstrapPage() {
   }
 
   return (
-    <main className="auth-layout">
+    <main className="auth-layout auth-layout--modern">
       <div className="app-canvas" aria-hidden="true" />
-      <section className="auth-card">
-        <header className="auth-card-header">
-          <div className="auth-logo auth-logo--brand">
-            <BrandLogo variant="auth" />
+      <section className="auth-card auth-card--modern">
+        <header className="login-header-brand">
+          <div className="login-logo-wrap">
+            <div className="auth-logo auth-logo--brand">
+              <BrandLogo variant="auth" />
+            </div>
           </div>
-          <div className="auth-card-titles">
-            <h1>Criar administrador</h1>
-            <p className="auth-subtitle">Somente quando ainda não existem usuários na base.</p>
-          </div>
+          <h1 className="login-screen-title">Educahub</h1>
+          <p className="login-tagline">Primeiro acesso — criar administrador</p>
         </header>
-        <form onSubmit={handleSubmit} className="stack auth-form" noValidate>
-          <label className="field">
-            <span className="field-label">Nome completo</span>
+
+        <form onSubmit={handleSubmit} className="login-form auth-form" noValidate>
+          <div
+            className={`login-field-float${values.fullName.trim() ? " login-field-float--filled" : ""}`}
+          >
             <input
+              id="bootstrap-fullname"
+              className="login-field-float-input"
+              type="text"
+              autoComplete="name"
+              placeholder=" "
               value={values.fullName}
               onChange={(e) => setValues((v) => ({ ...v, fullName: e.target.value }))}
             />
-          </label>
-          <label className="field">
-            <span className="field-label">E-mail</span>
+            <label className="login-field-float-label" htmlFor="bootstrap-fullname">
+              Nome completo
+            </label>
+          </div>
+
+          <div
+            className={`login-field-float${values.email.trim() ? " login-field-float--filled" : ""}`}
+          >
             <input
+              id="bootstrap-email"
+              className="login-field-float-input"
               type="email"
               autoComplete="username"
+              placeholder=" "
               value={values.email}
               onChange={(e) => setValues((v) => ({ ...v, email: e.target.value }))}
             />
-          </label>
-          <label className="field">
-            <span className="field-label">Senha</span>
+            <label className="login-field-float-label" htmlFor="bootstrap-email">
+              E-mail
+            </label>
+          </div>
+
+          <div
+            className={`login-field-float${values.password.length > 0 ? " login-field-float--filled" : ""}`}
+          >
             <input
-              type="password"
+              id="bootstrap-password"
+              className="login-field-float-input login-field-float-input--toggle"
+              type={showPassword ? "text" : "password"}
               autoComplete="new-password"
+              placeholder=" "
               value={values.password}
               onChange={(e) => setValues((v) => ({ ...v, password: e.target.value }))}
             />
-          </label>
+            <label className="login-field-float-label" htmlFor="bootstrap-password">
+              Senha
+            </label>
+            <button
+              type="button"
+              className="login-password-toggle"
+              aria-label={showPassword ? "Ocultar texto digitado" : "Exibir texto digitado"}
+              aria-pressed={showPassword}
+              onClick={() => setShowPassword((s) => !s)}
+            >
+              {showPassword ? <EyeSlashIcon /> : <EyeIcon />}
+            </button>
+          </div>
+
           {error ? (
-            <p className="error auth-error" role="alert">
+            <p className="error auth-error login-inline-error" role="alert">
               {error}
             </p>
           ) : null}
@@ -90,14 +127,69 @@ export function BootstrapPage() {
               {success}
             </output>
           ) : null}
-          <button type="submit" className="primary auth-submit" disabled={submitting}>
+
+          <button type="submit" className="login-submit" disabled={submitting}>
             {submitting ? "Criando…" : "Criar administrador"}
           </button>
         </form>
-        <p className="auth-footer-link">
-          <Link to="/login">Voltar ao login</Link>
-        </p>
+
+        <div className="login-footer-links">
+          <span
+            className="login-link-accent login-link-accent--disabled"
+            title="Disponível somente quando ainda não existem usuários na base."
+          >
+            Sem usuários na base
+          </span>
+          <span className="login-footer-dot" aria-hidden="true">
+            ·
+          </span>
+          <Link className="login-link-secondary" to="/login">
+            Voltar ao login
+          </Link>
+        </div>
       </section>
     </main>
+  );
+}
+
+function EyeIcon() {
+  return (
+    <svg
+      className="login-password-toggle-icon"
+      viewBox="0 0 24 24"
+      width="20"
+      height="20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function EyeSlashIcon() {
+  return (
+    <svg
+      className="login-password-toggle-icon"
+      viewBox="0 0 24 24"
+      width="20"
+      height="20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+      <line x1="1" y1="1" x2="23" y2="23" />
+    </svg>
   );
 }
