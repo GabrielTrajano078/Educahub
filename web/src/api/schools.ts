@@ -19,3 +19,17 @@ export type CreateSchoolBody = {
 export async function createSchool(body: CreateSchoolBody): Promise<{ id: string }> {
   return apiFetch("/api/schools", { method: "POST", body });
 }
+
+export type UpdateSchoolBody = Partial<CreateSchoolBody>;
+
+export async function fetchSchool(id: string): Promise<School> {
+  return apiFetch(`/api/schools/${id}`);
+}
+
+export async function updateSchool(id: string, body: UpdateSchoolBody): Promise<void> {
+  await apiFetch(`/api/schools/${id}`, { method: "PATCH", body });
+}
+
+export async function deleteSchool(id: string): Promise<void> {
+  await apiFetch(`/api/schools/${id}`, { method: "DELETE" });
+}

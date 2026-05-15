@@ -1,7 +1,10 @@
 import { screen, waitFor } from "@testing-library/react";
+import { fireEvent } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { listClassrooms } from "@/api/classes";
+import { listExams } from "@/api/exams";
 import { listSchools } from "@/api/schools";
-import { fetchSchoolSummary } from "@/api/results";
+import { fetchClassroomHeatmap, fetchClassroomRanking, fetchClassroomReport, fetchSchoolSummary } from "@/api/results";
 import { useAuth } from "@/auth/useAuth";
 import { ApiError } from "@/lib/api-client";
 import { renderPage } from "@/test/render-page";
@@ -15,12 +18,28 @@ vi.mock("@/api/schools", () => ({
   listSchools: vi.fn(),
 }));
 
+vi.mock("@/api/classes", () => ({
+  listClassrooms: vi.fn(),
+}));
+
+vi.mock("@/api/exams", () => ({
+  listExams: vi.fn(),
+}));
+
 vi.mock("@/api/results", () => ({
   fetchSchoolSummary: vi.fn(),
+  fetchClassroomRanking: vi.fn(),
+  fetchClassroomHeatmap: vi.fn(),
+  fetchClassroomReport: vi.fn(),
 }));
 
 const mockedUseAuth = vi.mocked(useAuth);
+const mockedListClassrooms = vi.mocked(listClassrooms);
+const mockedListExams = vi.mocked(listExams);
 const mockedListSchools = vi.mocked(listSchools);
+const mockedFetchClassroomHeatmap = vi.mocked(fetchClassroomHeatmap);
+const mockedFetchClassroomRanking = vi.mocked(fetchClassroomRanking);
+const mockedFetchClassroomReport = vi.mocked(fetchClassroomReport);
 const mockedFetchSchoolSummary = vi.mocked(fetchSchoolSummary);
 
 const adminAuth = {
@@ -72,6 +91,32 @@ describe("SchoolSummaryPage", () => {
         },
       ],
     });
+    mockedListClassrooms.mockResolvedValueOnce([
+      {
+        _id: "507f1f77bcf86cd799439012",
+        schoolId: "507f1f77bcf86cd799439011",
+        name: "5º A",
+        grade: "5",
+      },
+    ]);
+    mockedListExams.mockResolvedValueOnce([]);
+    mockedFetchClassroomRanking.mockResolvedValueOnce([]);
+    mockedFetchClassroomHeatmap.mockResolvedValueOnce({
+      masteryThreshold: 70,
+      weakThreshold: 60,
+      dominated: [],
+      notDominated: [],
+      intermediate: [],
+      byDescriptor: [],
+    });
+    mockedFetchClassroomReport.mockResolvedValueOnce({
+      classroom: { id: "507f1f77bcf86cd799439012", name: "5º A", grade: "5", schoolId: "507f1f77bcf86cd799439011" },
+      byDescriptor: [],
+      byAxis: [],
+      masteredDescriptors: [],
+      notMasteredDescriptors: [],
+      interventions: [],
+    });
 
     renderPage(<SchoolSummaryPage />, {
       initialEntries: ["/escola/resumo?schoolId=507f1f77bcf86cd799439011"],
@@ -80,7 +125,11 @@ describe("SchoolSummaryPage", () => {
     expect(await screen.findByRole("heading", { name: "Resumo da escola" })).toBeInTheDocument();
     expect(await screen.findByText("5º A")).toBeInTheDocument();
     expect(screen.getByText("72%")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Painel turma" })).toHaveAttribute("href", "/turma/507f1f77bcf86cd799439012");
+    const openButton = screen.getByRole("button", { name: "Abrir painel da turma 5º A" });
+    fireEvent.click(openButton);
+    expect(await screen.findByRole("heading", { name: "Painel completo da turma" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Filtrar por prova" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ranking" })).toBeInTheDocument();
   });
 
   it("admin sem escola selecionada pede seleção", async () => {
@@ -88,8 +137,7 @@ describe("SchoolSummaryPage", () => {
     mockedListSchools.mockResolvedValueOnce([]);
 
     renderPage(<SchoolSummaryPage />);
-
-    expect(await screen.findByText("Selecione uma escola.")).toBeInTheDocument();
+    expect(await screen.findByText("Mostrando todas as turmas com dados disponíveis.")).toBeInTheDocument();
   });
 
   it("coordenador usa escola vinculada ao perfil", async () => {

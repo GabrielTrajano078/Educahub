@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { type ComponentProps, useState } from "react";
+import { type ComponentProps, useMemo, useState } from "react";
 import { useAuth } from "@/auth/useAuth";
-import { createClassroom } from "@/api/classes";
+import { createClassroom, fetchClassroom, updateClassroom } from "@/api/classes";
 import { listSchools } from "@/api/schools";
 import { ApiError } from "@/lib/api-client";
 import { ModalFormPanel, ModalFormShell } from "@/components/ModalFormShell";
@@ -11,9 +11,10 @@ import { NewClassroomForm } from "./classes/NewClassroomForm";
 type ClassroomNewModalProps = Readonly<{
   open: boolean;
   onClose: () => void;
+  classroomId?: string;
 }>;
 
-export function ClassroomNewModal({ open, onClose }: ClassroomNewModalProps) {
+export function ClassroomNewModal({ open, onClose, classroomId }: ClassroomNewModalProps) {
   const qc = useQueryClient();
   const { state } = useAuth();
   const [schoolId, setSchoolId] = useState("");
@@ -25,7 +26,23 @@ export function ClassroomNewModal({ open, onClose }: ClassroomNewModalProps) {
 
   const user = state.status === "authenticated" ? state.user : null;
   const isCoord = user?.role === "coordenador";
+  const isEdit = Boolean(classroomId);
   const needsSchoolPicker = user && (user.role === "admin" || user.role === "gestor");
+
+  const detailQ = useQuery({
+    queryKey: ["classroom", classroomId],
+    queryFn: () => fetchClassroom(classroomId!),
+    enabled: open && Boolean(classroomId),
+  });
+
+  const initialFromDetail = useMemo(() => {
+    if (!detailQ.data) return null;
+    return {
+      schoolId: detailQ.data.schoolId,
+      name: detailQ.data.name,
+      grade: detailQ.data.grade,
+    };
+  }, [detailQ.data]);
 
   const schoolsQ = useQuery({
     queryKey: ["schools"],
@@ -33,19 +50,27 @@ export function ClassroomNewModal({ open, onClose }: ClassroomNewModalProps) {
     enabled: open && state.status === "authenticated" && Boolean(needsSchoolPicker),
   });
 
-  const effectiveSchoolId = isCoord && user?.schoolId ? user.schoolId : schoolId;
+  const resolvedSchoolId = initialFromDetail?.schoolId ?? schoolId;
+  const resolvedName = initialFromDetail?.name ?? name;
+  const resolvedGrade = initialFromDetail?.grade ?? grade;
+  const effectiveSchoolId = isCoord && user?.schoolId ? user.schoolId : resolvedSchoolId;
 
   const createM = useMutation({
-    mutationFn: createClassroom,
+    mutationFn: async () => {
+      if (!classroomId) {
+        return createClassroom({ schoolId: effectiveSchoolId, name: resolvedName, grade: resolvedGrade });
+      }
+      return updateClassroom(classroomId, { schoolId: effectiveSchoolId, name: resolvedName, grade: resolvedGrade });
+    },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["classes"] });
       setPendingClose(true);
-      setFeedback({ variant: "success", message: "Turma cadastrada com sucesso." });
+      setFeedback({ variant: "success", message: isEdit ? "Turma atualizada com sucesso." : "Turma cadastrada com sucesso." });
     },
     onError: (err: unknown) => {
       setFeedback({
         variant: "error",
-        message: err instanceof ApiError ? err.message : "Não foi possível cadastrar.",
+        message: err instanceof ApiError ? err.message : isEdit ? "Não foi possível atualizar." : "Não foi possível cadastrar.",
       });
     },
   });
@@ -58,12 +83,13 @@ export function ClassroomNewModal({ open, onClose }: ClassroomNewModalProps) {
       setFeedback({ variant: "warning", message: "Selecione a escola." });
       return;
     }
-    const n = name.trim();
+    const n = resolvedName.trim();
     if (!n) {
       setFeedback({ variant: "warning", message: "Informe o nome da turma." });
       return;
     }
-    createM.mutate({ schoolId: sid, name: n, grade });
+    setSchoolId(sid);
+    createM.mutate();
   };
 
   function handleCloseFeedback() {
@@ -85,15 +111,21 @@ export function ClassroomNewModal({ open, onClose }: ClassroomNewModalProps) {
   const schools = schoolsQ.data ?? [];
 
   return (
-    <ModalFormShell open={open} title="Nova turma" onClose={onClose} beforeDialog={<FeedbackModal feedback={feedback} onClose={handleCloseFeedback} />}>
+    <ModalFormShell
+      open={open}
+      title={isEdit ? "Editar turma" : "Nova turma"}
+      onClose={onClose}
+      beforeDialog={<FeedbackModal feedback={feedback} onClose={handleCloseFeedback} />}
+    >
       <ModalFormPanel intro={<p className="muted small" style={{ marginTop: 0 }}>Escola, nome e ano. A importação por Excel fica na listagem de turmas.</p>}>
+        {detailQ.isLoading ? <p className="muted">Carregando…</p> : null}
         <NewClassroomForm
           schools={schools}
           schoolId={effectiveSchoolId}
           onSchoolIdChange={setSchoolId}
-          name={name}
+          name={resolvedName}
           onNameChange={setName}
-          grade={grade}
+          grade={resolvedGrade}
           onGradeChange={setGrade}
           needsSchoolPicker={Boolean(needsSchoolPicker)}
           isCoord={Boolean(isCoord)}

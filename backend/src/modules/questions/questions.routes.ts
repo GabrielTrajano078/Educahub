@@ -11,6 +11,8 @@ import {
   listDescriptorsSchema,
   listQuestionsSchema,
   questionSuggestionsSchema,
+  questionIdParamsSchema,
+  updateQuestionSchema,
 } from "./questions.schemas";
 import { QuestionModel } from "./question.model";
 
@@ -138,6 +140,60 @@ questionsRouter.post("/", requireAuth, requireRole("admin"), async (req, res, ne
     });
 
     res.status(201).json({ id: String(question._id) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+questionsRouter.get("/:id", requireAuth, async (req, res, next) => {
+  try {
+    const { id } = questionIdParamsSchema.parse(req.params);
+    const question = await QuestionModel.findById(id).lean();
+    if (!question) {
+      res.status(404).json({ message: "Questao nao encontrada." });
+      return;
+    }
+    res.json(question);
+  } catch (error) {
+    next(error);
+  }
+});
+
+questionsRouter.patch("/:id", requireAuth, requireRole("admin"), async (req, res, next) => {
+  try {
+    const { id } = questionIdParamsSchema.parse(req.params);
+    const data = updateQuestionSchema.parse(req.body);
+    if (Object.keys(data).length === 0) {
+      res.status(400).json({ message: "Nenhum campo para atualizar." });
+      return;
+    }
+    const updated = await QuestionModel.findByIdAndUpdate(id, { $set: data }, { new: true }).lean();
+    if (!updated) {
+      res.status(404).json({ message: "Questao nao encontrada." });
+      return;
+    }
+    res.json({ ok: true });
+  } catch (error) {
+    next(error);
+  }
+});
+
+questionsRouter.delete("/:id", requireAuth, requireRole("admin"), async (req, res, next) => {
+  try {
+    const { id } = questionIdParamsSchema.parse(req.params);
+    const qid = new Types.ObjectId(id);
+    const existing = await QuestionModel.findById(qid).lean();
+    if (!existing) {
+      res.status(404).json({ message: "Questao nao encontrada." });
+      return;
+    }
+    const inUse = await ExamModel.exists({ "questions.questionId": qid });
+    if (inUse) {
+      res.status(409).json({ message: "Questao vinculada a prova. Remova da prova antes de excluir." });
+      return;
+    }
+    await QuestionModel.deleteOne({ _id: qid });
+    res.status(204).send();
   } catch (error) {
     next(error);
   }

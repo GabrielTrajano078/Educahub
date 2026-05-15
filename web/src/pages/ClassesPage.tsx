@@ -1,14 +1,18 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/useAuth";
-import { listClassrooms } from "@/api/classes";
+import { deleteClassroom, listClassrooms } from "@/api/classes";
 import { listSchools } from "@/api/schools";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
+import { FeedbackModal, type FeedbackModalState } from "@/components/ui/FeedbackModal";
 import { FeedbackMessage } from "@/components/ui/FeedbackMessage";
 import { ClassroomNewModal } from "@/pages/ClassroomNewPage";
+import { ApiError } from "@/lib/api-client";
 import { ClassesListFilters } from "./classes/ClassesListFilters";
 import { ClassroomImportPanel } from "./classes/ClassroomImportPanel";
+import { ClassroomViewModal } from "./classes/ClassroomViewModal";
 import {
   importClassroomsFromWorkbook,
   type ClassroomImportReport,
@@ -17,14 +21,29 @@ import { RegisteredClassesTable } from "./classes/RegisteredClassesTable";
 
 export function ClassesPage() {
   const qc = useQueryClient();
+  const confirm = useConfirm();
   const { state } = useAuth();
   const [sp, setSp] = useSearchParams();
   const [schoolFilter, setSchoolFilter] = useState("");
   const [gradeFilter, setGradeFilter] = useState("");
   const [nameContains, setNameContains] = useState("");
+  const [viewClassroomId, setViewClassroomId] = useState<string | null>(null);
   const [importBusy, setImportBusy] = useState(false);
   const [importReport, setImportReport] = useState<ClassroomImportReport | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
+  const [deleteErr, setDeleteErr] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<FeedbackModalState | null>(null);
+  const deleteM = useMutation({
+    mutationFn: (id: string) => deleteClassroom(id),
+    onSuccess: () => {
+      setDeleteErr(null);
+      setFeedback({ variant: "success", message: "Turma excluída com sucesso." });
+      void qc.invalidateQueries({ queryKey: ["classes"] });
+    },
+    onError: (e: unknown) => {
+      setDeleteErr(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Não foi possível excluir.");
+    },
+  });
 
   const user = state.status === "authenticated" ? state.user : null;
   const canCreate = user && (user.role === "admin" || user.role === "gestor" || user.role === "coordenador");
@@ -59,6 +78,11 @@ export function ClassesPage() {
     }
     return m;
   }, [schoolsQ.data]);
+
+  const viewClassroom = useMemo(
+    () => (viewClassroomId ? classesQ.data?.find((c) => c._id === viewClassroomId) ?? null : null),
+    [classesQ.data, viewClassroomId],
+  );
 
   function resolveSchoolIdForImport(): string | null {
     if (needsSchoolPicker) {
@@ -108,22 +132,49 @@ export function ClassesPage() {
   const { user: u } = state;
   const schools = schoolsQ.data ?? [];
   const turmaCreateOpen = sp.get("nova") === "1";
+  const turmaEditId = sp.get("edit")?.trim() || null;
 
   function openTurmaCreate() {
     const next = new URLSearchParams(sp);
     next.set("nova", "1");
+    next.delete("edit");
     setSp(next, { replace: false });
   }
 
   function closeTurmaCreate() {
     const next = new URLSearchParams(sp);
     next.delete("nova");
+    next.delete("edit");
     setSp(next, { replace: true });
+  }
+
+  function openTurmaEdit(id: string) {
+    const next = new URLSearchParams(sp);
+    next.set("edit", id);
+    next.delete("nova");
+    setSp(next, { replace: false });
+  }
+
+  function openTurmaView(id: string) {
+    setViewClassroomId(id);
+  }
+
+  function closeTurmaView() {
+    setViewClassroomId(null);
   }
 
   return (
     <div>
-      {turmaCreateOpen && canCreate ? <ClassroomNewModal open onClose={closeTurmaCreate} /> : null}
+      <FeedbackModal feedback={feedback} onClose={() => setFeedback(null)} />
+      <ClassroomViewModal
+        open={Boolean(viewClassroom)}
+        classroom={viewClassroom}
+        schoolName={viewClassroom ? schoolNameById.get(viewClassroom.schoolId) ?? "—" : ""}
+        onClose={closeTurmaView}
+      />
+      {(turmaCreateOpen || turmaEditId) && canCreate ? (
+        <ClassroomNewModal open onClose={closeTurmaCreate} classroomId={turmaEditId ?? undefined} />
+      ) : null}
       <section className="panel">
         <div className="section-header">
           <h2>Turmas</h2>
@@ -172,6 +223,11 @@ export function ClassesPage() {
       </section>
 
       <section className="panel">
+        {deleteErr ? (
+          <p className="error" role="alert">
+            {deleteErr}
+          </p>
+        ) : null}
         <RegisteredClassesTable
           isLoading={classesQ.isLoading}
           isError={classesQ.isError}
@@ -180,6 +236,20 @@ export function ClassesPage() {
           schoolNameById={schoolNameById}
           user={u}
           canCreate={Boolean(canCreate)}
+          onView={openTurmaView}
+          onEdit={openTurmaEdit}
+          onDelete={async (id, name) => {
+            const ok = await confirm({
+              title: "Excluir turma",
+              description: `Excluir turma "${name}"? Esta ação não pode ser desfeita.`,
+              variant: "danger",
+              confirmLabel: "Excluir",
+              cancelLabel: "Cancelar",
+            });
+            if (!ok) return;
+            deleteM.mutate(id);
+          }}
+          deletePendingId={deleteM.isPending ? deleteM.variables : undefined}
         />
       </section>
     </div>

@@ -14,6 +14,10 @@ export type QuestionListItem = {
   optionD: string;
 };
 
+export type QuestionDetail = QuestionListItem & {
+  answer: "A" | "B" | "C" | "D";
+};
+
 export async function listQuestionDescriptors(params: {
   discipline: "LP" | "MAT";
   grade: "5" | "9";
@@ -40,6 +44,10 @@ export async function listQuestions(params: {
   });
   const q = sp.toString();
   return apiFetch(`/api/questions${q ? `?${q}` : ""}`);
+}
+
+export async function fetchQuestion(id: string): Promise<QuestionDetail> {
+  return apiFetch(`/api/questions/${id}`);
 }
 
 export type QuestionSuggestion = {
@@ -79,6 +87,16 @@ export type CreateQuestionBody = {
   answer: "A" | "B" | "C" | "D";
 };
 
+export type UpdateQuestionBody = Partial<CreateQuestionBody>;
+
 export async function createQuestion(body: CreateQuestionBody): Promise<{ id: string }> {
   return apiFetch("/api/questions", { method: "POST", body });
+}
+
+export async function updateQuestion(id: string, body: UpdateQuestionBody): Promise<{ ok: boolean }> {
+  return apiFetch(`/api/questions/${id}`, { method: "PATCH", body });
+}
+
+export async function deleteQuestion(id: string): Promise<void> {
+  await apiFetch(`/api/questions/${id}`, { method: "DELETE" });
 }

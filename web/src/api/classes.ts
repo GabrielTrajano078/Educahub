@@ -29,3 +29,17 @@ export type CreateClassroomBody = {
 export async function createClassroom(body: CreateClassroomBody): Promise<{ id: string }> {
   return apiFetch("/api/classes", { method: "POST", body });
 }
+
+export type UpdateClassroomBody = Partial<CreateClassroomBody>;
+
+export async function fetchClassroom(id: string): Promise<Classroom> {
+  return apiFetch(`/api/classes/${id}`);
+}
+
+export async function updateClassroom(id: string, body: UpdateClassroomBody): Promise<void> {
+  await apiFetch(`/api/classes/${id}`, { method: "PATCH", body });
+}
+
+export async function deleteClassroom(id: string): Promise<void> {
+  await apiFetch(`/api/classes/${id}`, { method: "DELETE" });
+}
