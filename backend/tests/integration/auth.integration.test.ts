@@ -12,8 +12,8 @@ jest.mock("../../src/modules/auth/user.model", () => ({
 }));
 
 function mockFindOneLean(value: unknown): void {
-  const lean = jest.fn().mockResolvedValue(value);
-  (UserModel.findOne as jest.Mock).mockReturnValue({ lean });
+  const lean = jest.fn<() => Promise<unknown>>().mockResolvedValue(value);
+  jest.mocked(UserModel.findOne).mockReturnValue({ lean } as unknown as ReturnType<typeof UserModel.findOne>);
 }
 
 function sampleUser(overrides: Partial<{ passwordHash: string | null }> = {}) {
@@ -95,7 +95,9 @@ describe("POST /api/auth/login", () => {
   it("retorna 401 quando bcrypt.compare rejeita", async () => {
     const hash = await bcrypt.hash("x", 4);
     mockFindOneLean(sampleUser({ passwordHash: hash }));
-    const spy = jest.spyOn(bcrypt, "compare").mockRejectedValueOnce(new Error("falha bcrypt"));
+    const spy = jest
+      .spyOn(bcrypt, "compare")
+      .mockImplementation(() => Promise.reject(new Error("falha bcrypt")));
     const res = await request(app).post("/api/auth/login").send({
       email: "user@test.com",
       password: "x",

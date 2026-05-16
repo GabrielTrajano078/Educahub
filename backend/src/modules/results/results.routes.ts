@@ -2,6 +2,7 @@ import path from "node:path";
 import { Router } from "express";
 import { Types } from "mongoose";
 import { buildPublicFileUrl, getUploadRoot, saveBufferToStorage } from "../../lib/file-storage";
+import { createHttpError } from "../../lib/http-error";
 import { canAccessClassroom, canAccessSchool, canAccessStudent } from "../../lib/access";
 import { suggestIntervention } from "../../lib/pedagogy";
 import { upload } from "../../lib/upload";
@@ -43,7 +44,7 @@ function getBaseUrl(req: any): string {
 async function getActiveAnswerKeyOrThrow(examId: Types.ObjectId) {
   const key = await OfficialAnswerKeyModel.findOne({ examId, isActive: true }).lean();
   if (!key) {
-    throw Object.assign(new Error("Gabarito oficial nao publicado para esta prova."), { statusCode: 400 });
+    throw createHttpError("Gabarito oficial nao publicado para esta prova.", 400);
   }
   return key;
 }
@@ -55,13 +56,13 @@ async function buildAnswerSheetPayload(examId: string, studentId: string) {
   ]);
 
   if (!exam) {
-    throw Object.assign(new Error("Prova nao encontrada."), { statusCode: 404 });
+    throw createHttpError("Prova nao encontrada.", 404);
   }
   if (!student) {
-    throw Object.assign(new Error("Aluno nao encontrado."), { statusCode: 404 });
+    throw createHttpError("Aluno nao encontrado.", 404);
   }
   if (String(student.classroomId) !== String(exam.classroomId)) {
-    throw Object.assign(new Error("O aluno nao pertence a turma vinculada a esta prova."), { statusCode: 400 });
+    throw createHttpError("O aluno nao pertence a turma vinculada a esta prova.", 400);
   }
 
   const [school, classroom] = await Promise.all([
@@ -70,7 +71,7 @@ async function buildAnswerSheetPayload(examId: string, studentId: string) {
   ]);
 
   if (!school || !classroom) {
-    throw Object.assign(new Error("Escola ou turma vinculada nao encontrada."), { statusCode: 404 });
+    throw createHttpError("Escola ou turma vinculada nao encontrada.", 404);
   }
 
   const sheetCode = await generateUniqueSheetCode();
@@ -134,12 +135,12 @@ async function persistExamCorrection(
 ): Promise<{ totalEffective: number; correct: number; percentage: number }> {
   const sheet = await AnswerSheetModel.findById(answerSheetId).lean();
   if (!sheet) {
-    throw Object.assign(new Error("Cartao nao encontrado."), { statusCode: 404 });
+    throw createHttpError("Cartao nao encontrado.", 404);
   }
 
   const exam = await ExamModel.findById(sheet.examId).lean();
   if (!exam) {
-    throw Object.assign(new Error("Prova nao encontrada."), { statusCode: 404 });
+    throw createHttpError("Prova nao encontrada.", 404);
   }
 
   const answerKey = await getActiveAnswerKeyOrThrow(exam._id);
@@ -158,9 +159,9 @@ async function persistExamCorrection(
   );
 
   if (answers.length !== exam.questionCount) {
-    throw Object.assign(
-      new Error(`Envie exatamente ${exam.questionCount} resposta(s), uma por questao da prova.`),
-      { statusCode: 400 },
+    throw createHttpError(
+      `Envie exatamente ${exam.questionCount} resposta(s), uma por questao da prova.`,
+      400,
     );
   }
 
@@ -171,24 +172,22 @@ async function persistExamCorrection(
 
   const submittedOrders = resolvedAnswers.map((a) => a.order);
   if (submittedOrders.includes(undefined)) {
-    throw Object.assign(new Error("Nao foi possivel identificar a ordem de todas as questoes."), {
-      statusCode: 400,
-    });
+    throw createHttpError("Nao foi possivel identificar a ordem de todas as questoes.", 400);
   }
   if (new Set(submittedOrders).size !== submittedOrders.length) {
-    throw Object.assign(new Error("Ordem duplicada na correcao."), { statusCode: 400 });
+    throw createHttpError("Ordem duplicada na correcao.", 400);
   }
 
   for (const answer of resolvedAnswers) {
     if (!answer.order || !officialByOrder.has(answer.order)) {
-      throw Object.assign(new Error("Questao fora da ordem esperada para esta prova."), { statusCode: 400 });
+      throw createHttpError("Questao fora da ordem esperada para esta prova.", 400);
     }
   }
 
   const docs = resolvedAnswers.map((answer) => {
     const official = officialByOrder.get(answer.order!);
     if (!official) {
-      throw Object.assign(new Error("Item do gabarito nao encontrado."), { statusCode: 400 });
+      throw createHttpError("Item do gabarito nao encontrado.", 400);
     }
     const resolvedQuestionId = answer.questionId ?? questionIdByOrder.get(answer.order!) ?? null;
     const isVoided = official.isVoided || official.correctAnswer === "N/A";
@@ -269,25 +268,12 @@ resultsRouter.post(
         return;
       }
 
-      try {
-        const payload = await buildAnswerSheetPayload(data.examId, data.studentId);
-        const answerSheet = await AnswerSheetModel.create({
-          ...payload,
-          uploadUrl: data.uploadUrl,
-        });
-        res.status(201).json({ id: String(answerSheet._id), sheetCode: answerSheet.sheetCode });
-      } catch (e) {
-        const err = e as { statusCode?: number; message?: string };
-        if (err.statusCode === 404) {
-          res.status(404).json({ message: err.message });
-          return;
-        }
-        if (err.statusCode === 400) {
-          res.status(400).json({ message: err.message });
-          return;
-        }
-        throw e;
-      }
+      const payload = await buildAnswerSheetPayload(data.examId, data.studentId);
+      const answerSheet = await AnswerSheetModel.create({
+        ...payload,
+        uploadUrl: data.uploadUrl,
+      });
+      res.status(201).json({ id: String(answerSheet._id), sheetCode: answerSheet.sheetCode });
     } catch (error) {
       next(error);
     }
@@ -342,30 +328,17 @@ resultsRouter.post(
         return;
       }
 
-      try {
-        const normalizedAnswers = data.answers.map((answer) => ({
-          questionId: answer.questionId,
-          markedAnswer: answer.markedAnswer,
-        }));
-        const stats = await persistExamCorrection(data.answerSheetId, normalizedAnswers, "MANUAL");
-        res.json({
-          total: data.answers.length,
-          totalEffective: stats.totalEffective,
-          correct: stats.correct,
-          percentage: stats.percentage,
-        });
-      } catch (e) {
-        const err = e as { statusCode?: number; message?: string };
-        if (err.statusCode === 404) {
-          res.status(404).json({ message: err.message });
-          return;
-        }
-        if (err.statusCode === 400) {
-          res.status(400).json({ message: err.message });
-          return;
-        }
-        throw e;
-      }
+      const normalizedAnswers = data.answers.map((answer) => ({
+        questionId: answer.questionId,
+        markedAnswer: answer.markedAnswer,
+      }));
+      const stats = await persistExamCorrection(data.answerSheetId, normalizedAnswers, "MANUAL");
+      res.json({
+        total: data.answers.length,
+        totalEffective: stats.totalEffective,
+        correct: stats.correct,
+        percentage: stats.percentage,
+      });
     } catch (error) {
       next(error);
     }
@@ -422,27 +395,18 @@ resultsRouter.post(
         return;
       }
 
-      try {
-        const normalizedAnswers = data.marks.map((mark, index) => ({
-          order: mark.order,
-          questionId: answers[index]?.questionId,
-          markedAnswer: mark.markedAnswer,
-        }));
-        const stats = await persistExamCorrection(data.answerSheetId, normalizedAnswers, "MANUAL");
-        res.json({
-          total: answers.length,
-          totalEffective: stats.totalEffective,
-          correct: stats.correct,
-          percentage: stats.percentage,
-        });
-      } catch (e) {
-        const err = e as { statusCode?: number; message?: string };
-        if (err.statusCode === 400) {
-          res.status(400).json({ message: err.message });
-          return;
-        }
-        throw e;
-      }
+      const normalizedAnswers = data.marks.map((mark, index) => ({
+        order: mark.order,
+        questionId: answers[index]?.questionId,
+        markedAnswer: mark.markedAnswer,
+      }));
+      const stats = await persistExamCorrection(data.answerSheetId, normalizedAnswers, "MANUAL");
+      res.json({
+        total: answers.length,
+        totalEffective: stats.totalEffective,
+        correct: stats.correct,
+        percentage: stats.percentage,
+      });
     } catch (error) {
       next(error);
     }

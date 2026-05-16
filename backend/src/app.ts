@@ -4,8 +4,8 @@ import helmet from "helmet";
 import morgan from "morgan";
 import path from "path";
 import swaggerUi from "swagger-ui-express";
-import { ZodError } from "zod";
 import { openApiDocument } from "./docs/openapi";
+import { handleExpressError } from "./lib/express-error-handler";
 import { getUploadRoot } from "./lib/file-storage";
 import { authRouter } from "./modules/auth/auth.routes";
 import { usersRouter } from "./modules/auth/users.routes";
@@ -46,12 +46,4 @@ app.use("/api/questions", questionsRouter);
 app.use("/api/exams", examsRouter);
 app.use("/api/results", resultsRouter);
 
-app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  if (err instanceof ZodError) {
-    res.status(400).json({ message: "Erro de validacao", issues: err.issues });
-    return;
-  }
-
-  console.error(err);
-  res.status(500).json({ message: "Erro interno do servidor." });
-});
+app.use(handleExpressError);

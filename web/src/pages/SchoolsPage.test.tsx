@@ -65,10 +65,9 @@ describe("SchoolsPage", () => {
     expect(await screen.findByText("EMEF Centro")).toBeInTheDocument();
     expect(screen.getByText("Fortaleza")).toBeInTheDocument();
     expect(screen.getByText("2304400")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Resumo" })).toHaveAttribute(
-      "href",
-      "/escola/resumo?schoolId=507f1f77bcf86cd799439011",
-    );
+    expect(screen.getByRole("button", { name: "Ver EMEF Centro" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Editar EMEF Centro" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Excluir EMEF Centro" })).toBeInTheDocument();
   });
 
   it("mostra estado vazio quando não há escolas", async () => {

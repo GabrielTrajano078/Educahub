@@ -18,6 +18,25 @@ const errorResponse = {
   },
 };
 
+const idPathParameter = { name: "id", in: "path", required: true, schema: objectId };
+
+function deleteByIdOperation(tag: string, summary: string) {
+  return {
+    tags: [tag],
+    summary,
+    security: [{ bearerAuth: [] }],
+    parameters: [idPathParameter],
+    responses: {
+      204: { description: "Recurso removido" },
+      400: errorResponse,
+      401: errorResponse,
+      403: errorResponse,
+      404: errorResponse,
+      409: errorResponse,
+    },
+  };
+}
+
 export const openApiDocument = {
   openapi: "3.0.3",
   info: {
@@ -459,6 +478,9 @@ export const openApiDocument = {
         },
       },
     },
+    "/api/schools/{id}": {
+      delete: deleteByIdOperation("Schools", "Remove escola (sem turmas vinculadas)"),
+    },
     "/api/classes": {
       get: {
         tags: ["Classes"],
@@ -497,6 +519,9 @@ export const openApiDocument = {
           403: errorResponse,
         },
       },
+    },
+    "/api/classes/{id}": {
+      delete: deleteByIdOperation("Classes", "Remove turma (sem alunos vinculados)"),
     },
     "/api/students": {
       get: {
@@ -538,6 +563,9 @@ export const openApiDocument = {
         },
       },
     },
+    "/api/students/{id}": {
+      delete: deleteByIdOperation("Students", "Remove aluno e dados vinculados (cartoes, resultados)"),
+    },
     "/api/questions": {
       get: {
         tags: ["Questions"],
@@ -577,6 +605,9 @@ export const openApiDocument = {
           },
         },
       },
+    },
+    "/api/questions/{id}": {
+      delete: deleteByIdOperation("Questions", "Remove questao (se nao estiver em prova)"),
     },
     "/api/questions/descriptors": {
       get: {
@@ -689,12 +720,13 @@ export const openApiDocument = {
         tags: ["Exams"],
         summary: "Detalha prova",
         security: [{ bearerAuth: [] }],
-        parameters: [{ name: "id", in: "path", required: true, schema: objectId }],
+        parameters: [idPathParameter],
         responses: {
           200: { description: "Detalhe da prova" },
           404: errorResponse,
         },
       },
+      delete: deleteByIdOperation("Exams", "Remove prova e dados vinculados (gabarito, cartoes, resultados)"),
     },
     "/api/exams/{id}/answer-key": {
       get: {
