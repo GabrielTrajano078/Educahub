@@ -1,0 +1,29 @@
+---
+description: Jira Cloud (Scorefy) — projeto QODE, MCP Atlassian e metadados para criar/atualizar issues
+alwaysApply: false
+---
+
+# Jira Cloud — Scorefy / QODE
+
+Use estes valores em chamadas MCP Atlassian ao Jira (criar/editar/transicionar pesquisas com `cloudId` e `projectKey`).
+
+## Identificadores
+
+| Campo | Valor |
+|-------|-------|
+| **Site** | `https://scorefy.atlassian.net` |
+| **Cloud ID** | `09fff7f0-2ac9-4fff-acd1-eff8ea790011` |
+| **Project key** | `QODE` |
+| **Backlog/board (referência)** | `https://scorefy.atlassian.net/jira/software/projects/QODE/boards/35/backlog` |
+
+Para revalidar o `cloudId` em qualquer momento: GET `https://scorefy.atlassian.net/_edge/tenant_info`.
+
+## MCP
+
+Este repositório declara o servidor **`atlassian`** em `.cursor/mcp.json` apontando para o endpoint OAuth da Atlassian. No primeiro uso, aceita o fluxo **OAuth no browser**.
+
+## Boas práticas
+
+- Nunca gravar tokens de API nem emails de serviço no repositório; usar OAuth via MCP ou variáveis só locais (`~/.cursor/mcp.json` / macOS Keychain conforme política da equipa).
+- Em descrições de issues criadas pelo assistente, preferir Markdown estável em vez de paths de ficheiros frágeis, salvo quando a equipa pedir rastreio explícito.
+- Ao usar JQL neste projeto, restringir com `project = QODE`.
