@@ -3,6 +3,7 @@ import { Router } from "express";
 import type { z } from "zod";
 import { Types } from "mongoose";
 import { buildPublicFileUrl, saveBufferToStorage } from "../../lib/file-storage";
+import { createHttpError } from "../../lib/http-error";
 import { canAccessClassroom, canAccessSchool, canAccessStudent } from "../../lib/access";
 import { upload } from "../../lib/upload";
 import { requireAuth, requireRole } from "../../middlewares/auth";
@@ -52,7 +53,7 @@ async function canAccessExamRecord(
 async function buildOfficialAnswerKeyItems(examId: string) {
   const exam = await ExamModel.findById(examId).lean();
   if (!exam) {
-    throw Object.assign(new Error("Prova nao encontrada."), { statusCode: 404 });
+    throw createHttpError("Prova nao encontrada.", 404);
   }
 
   const questionIds = exam.questions.map((item) => item.questionId);

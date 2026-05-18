@@ -46,7 +46,12 @@ jest.mock("../../src/modules/results/answer-sheet-scan.model", () => ({
 }));
 
 jest.mock("../../src/modules/exams/official-answer-key.model", () => ({
-  OfficialAnswerKeyModel: { deleteMany: jest.fn() },
+  OfficialAnswerKeyModel: {
+    deleteMany: jest.fn(),
+    findOne: jest.fn(),
+    updateMany: jest.fn(),
+    create: jest.fn(),
+  },
 }));
 
 jest.mock("../../src/modules/exams/exam-file.model", () => ({
@@ -143,6 +148,42 @@ describe("PATCH /api/exams/:id", () => {
         }),
       },
     );
+  });
+});
+
+describe("POST /api/exams/:id/answer-key", () => {
+  beforeEach(() => {
+    jest.mocked(access.canAccessSchool).mockReset();
+    jest.mocked(access.canAccessClassroom).mockReset();
+    (ExamModel.findById as jest.Mock).mockReset();
+    (QuestionModel.find as jest.Mock).mockReset();
+  });
+
+  it("404 quando helper buildOfficialAnswerKeyItems nao encontra a prova (nao devolve 500)", async () => {
+    const exam = {
+      _id: new Types.ObjectId(validOid),
+      schoolId: new Types.ObjectId(validOid),
+      classroomId: new Types.ObjectId(classroomOid),
+      questionCount: 2,
+      questions: [
+        { questionId: new Types.ObjectId(questionOneOid), order: 1 },
+        { questionId: new Types.ObjectId(questionTwoOid), order: 2 },
+      ],
+    };
+    const lean = jest
+      .fn()
+      .mockResolvedValueOnce(exam)
+      .mockResolvedValueOnce(null);
+    (ExamModel.findById as jest.Mock).mockReturnValue({ lean });
+    jest.mocked(access.canAccessSchool).mockResolvedValue(true);
+
+    const res = await request(app)
+      .post(`/api/exams/${validOid}/answer-key`)
+      .set("Authorization", bearerAdmin())
+      .send({ notes: "Gabarito auto" });
+
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({ message: "Prova nao encontrada." });
   });
 });
 
