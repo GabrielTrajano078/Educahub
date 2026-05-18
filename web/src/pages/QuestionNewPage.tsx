@@ -134,18 +134,36 @@ export function QuestionNewModal({ open, onClose, questionId, onUpdated, onCreat
     }
   }
 
+  const formId = "question-new-form";
+  const submitLabel = m.isPending ? "Salvando…" : isEdit ? "Salvar alterações" : "Cadastrar";
+
   if (!open) return null;
 
   return (
     <ModalFormShell
       open={open}
+      variant="drawer"
       title={isEdit ? "Editar questão" : "Nova questão"}
+      subtitle="Campos obrigatórios alinhados à matriz SAEB."
       onClose={onClose}
       beforeDialog={<FeedbackModal feedback={feedback} onClose={handleCloseFeedback} />}
+      footer={
+        <>
+          <Button type="button" variant="ghost" onClick={onClose}>
+            Cancelar
+          </Button>
+          <div className="row-actions">
+            <Button type="submit" form={formId} variant="primary" disabled={m.isPending}>
+              {submitLabel}
+            </Button>
+          </div>
+        </>
+      }
     >
-      <ModalFormPanel intro={<p className="muted small" style={{ marginTop: 0 }}>Campos obrigatórios alinhados à matriz SAEB.</p>}>
+      <ModalFormPanel>
         {detailQ.isLoading ? <p className="muted">Carregando…</p> : null}
         <form
+          id={formId}
           className="form-grid question-new-form"
           onSubmit={(e) => {
             e.preventDefault();
@@ -263,11 +281,6 @@ export function QuestionNewModal({ open, onClose, questionId, onUpdated, onCreat
             }}
             options={ANSWER_OPTIONS}
           />
-          <div className="row-actions">
-            <Button type="submit" variant="primary" disabled={m.isPending}>
-              {m.isPending ? "Salvando…" : isEdit ? "Salvar alterações" : "Cadastrar"}
-            </Button>
-          </div>
         </form>
       </ModalFormPanel>
     </ModalFormShell>

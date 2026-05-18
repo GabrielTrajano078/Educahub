@@ -43,7 +43,7 @@ export function BootstrapPage() {
   }
 
   return (
-    <main className="auth-layout auth-layout--modern">
+    <main className="auth-layout auth-layout--modern ui-theme-modern">
       <div className="app-canvas" aria-hidden="true" />
       <section className="auth-card auth-card--modern">
         <header className="login-header-brand">

@@ -1660,6 +1660,82 @@ a.ghost {
   max-height: min(94vh, 920px);
 }
 
+/* Drawer lateral (ex.: nova/editar questão no banco) */
+.modal-backdrop--drawer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: stretch;
+  padding: 0;
+  place-items: unset;
+}
+
+.modal-backdrop--drawer .modal-dialog--drawer {
+  position: relative;
+  width: min(720px, 66vw);
+  max-width: none;
+  max-height: none;
+  height: 100%;
+  margin: 0;
+  border-radius: 0;
+  border-right: none;
+  animation: modal-drawer-in 0.28s ease-out;
+}
+
+@keyframes modal-drawer-in {
+  from {
+    opacity: 0.6;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.modal-close--drawer-external {
+  position: absolute;
+  top: 1.25rem;
+  right: min(720px, 66vw);
+  margin-right: 0.75rem;
+  z-index: 1;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-solid);
+  color: var(--text);
+  font-size: 1.35rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.modal-close--drawer-external:hover {
+  background: color-mix(in srgb, var(--surface-solid) 92%, var(--accent) 8%);
+}
+
+.modal-header-text {
+  min-width: 0;
+}
+
+.modal-subtitle {
+  margin: 0.35rem 0 0;
+}
+
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.modal-footer .row-actions {
+  margin: 0;
+  justify-content: flex-end;
+  flex: 1;
+}
+
 .exam-detail-modal-scroll {
   max-height: min(78vh, 760px);
   overflow-y: auto;
@@ -2108,18 +2184,230 @@ a.ghost {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Login moderno (claro, campos com rótulo flutuante) — escopo só em /login    */
+/* Tema claro moderno (login + app autenticado)                               */
 /* -------------------------------------------------------------------------- */
 
-.auth-layout.auth-layout--modern {
-  --login-text: #0f172a;
-  --login-muted: #64748b;
-  --login-border: #e2e8f0;
-  --login-bg: #ffffff;
-  --login-canvas: #f8fafc;
-  color: var(--login-text);
-  background: var(--login-bg);
+.ui-theme-modern {
+  color-scheme: light;
+  --ui-text: #0f172a;
+  --ui-muted: #64748b;
+  --ui-border: #e2e8f0;
+  --ui-bg: #ffffff;
+  --ui-canvas: #f8fafc;
+  --login-text: var(--ui-text);
+  --login-muted: var(--ui-muted);
+  --login-border: var(--ui-border);
+  --login-bg: var(--ui-bg);
+  --login-canvas: var(--ui-canvas);
+  --text: var(--ui-text);
+  --muted: var(--ui-muted);
+  --border: var(--ui-border);
+  --border-strong: var(--ui-border);
+  --bg: var(--ui-canvas);
+  --bg-elevated: var(--ui-bg);
+  --surface: #ffffff;
+  --surface-solid: var(--ui-bg);
+  --surface-hover: #f1f5f9;
+  --accent: #0891c9;
+  --accent-hover: #0aa6e3;
+  --accent-glow: color-mix(in srgb, var(--accent) 22%, transparent);
+  --accent-muted: color-mix(in srgb, var(--accent) 14%, transparent);
+  --ring: var(--accent);
 }
+
+.auth-layout.auth-layout--modern {
+  color: var(--ui-text);
+  background: var(--ui-bg);
+}
+
+.app-shell.ui-theme-modern {
+  color: var(--ui-text);
+}
+
+.app-shell.ui-theme-modern .app-canvas {
+  background-color: var(--ui-canvas);
+  background-image: none;
+}
+
+.app-shell.ui-theme-modern .sidebar {
+  background: linear-gradient(
+    175deg,
+    color-mix(in srgb, var(--ui-bg) 98%, transparent) 0%,
+    color-mix(in srgb, var(--ui-bg) 94%, #e2e8f0 6%) 100%
+  );
+  border-right-color: var(--ui-border);
+  box-shadow:
+    6px 0 32px rgba(15, 23, 42, 0.07),
+    inset -1px 0 0 rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px) saturate(1.1);
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
+}
+
+.app-shell.ui-theme-modern .sidebar-brand {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), transparent 72%);
+  border-bottom-color: var(--ui-border);
+}
+
+.app-shell.ui-theme-modern .sidebar-footer {
+  border-top-color: var(--ui-border);
+  background: linear-gradient(180deg, transparent 0%, rgba(15, 23, 42, 0.03) 45%, rgba(15, 23, 42, 0.05) 100%);
+}
+
+.app-shell.ui-theme-modern .sidebar-user-card {
+  background: #f8fafc;
+  border-color: var(--ui-border);
+}
+
+.app-shell.ui-theme-modern .nav-link-side {
+  color: color-mix(in srgb, var(--ui-text) 78%, var(--ui-muted));
+}
+
+.app-shell.ui-theme-modern .nav-link-side:hover {
+  color: var(--ui-text);
+  background: #f1f5f9;
+  box-shadow: inset 0 0 0 1px var(--ui-border);
+}
+
+.app-shell.ui-theme-modern .nav-link-side.active {
+  color: var(--ui-text);
+  background: var(--accent-muted);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent),
+    inset 3px 0 0 0 var(--accent);
+}
+
+.app-shell.ui-theme-modern .panel {
+  background: var(--ui-bg);
+  border-color: var(--ui-border);
+  backdrop-filter: none;
+  box-shadow:
+    0 1px 0 rgba(15, 23, 42, 0.04) inset,
+    0 12px 32px -12px rgba(15, 23, 42, 0.08);
+}
+
+.app-shell.ui-theme-modern .table-wrap {
+  border-color: var(--ui-border);
+  background: var(--ui-bg);
+}
+
+.app-shell.ui-theme-modern .field input,
+.app-shell.ui-theme-modern .field select,
+.app-shell.ui-theme-modern .field textarea,
+.app-shell.ui-theme-modern .form-grid .field input,
+.app-shell.ui-theme-modern .form-grid .field select,
+.app-shell.ui-theme-modern .form-grid .field textarea {
+  border: 1px solid var(--ui-border);
+  border-radius: 10px;
+  background: var(--ui-bg);
+  color: var(--ui-text);
+}
+
+.app-shell.ui-theme-modern .field input:hover,
+.app-shell.ui-theme-modern .field select:hover,
+.app-shell.ui-theme-modern .field textarea:hover,
+.app-shell.ui-theme-modern .form-grid .field input:hover,
+.app-shell.ui-theme-modern .form-grid .field select:hover,
+.app-shell.ui-theme-modern .form-grid .field textarea:hover {
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--ui-border));
+}
+
+.app-shell.ui-theme-modern .field input:focus,
+.app-shell.ui-theme-modern .field select:focus,
+.app-shell.ui-theme-modern .field textarea:focus,
+.app-shell.ui-theme-modern .form-grid .field input:focus,
+.app-shell.ui-theme-modern .form-grid .field select:focus,
+.app-shell.ui-theme-modern .form-grid .field textarea:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--ui-border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.app-shell.ui-theme-modern .ghost {
+  color: var(--ui-muted);
+}
+
+.app-shell.ui-theme-modern .ghost:hover:not(:disabled) {
+  color: var(--ui-text);
+  background: #f1f5f9;
+}
+
+.app-shell.ui-theme-modern .button-secondary {
+  border-color: var(--ui-border);
+  background: var(--ui-bg);
+  color: var(--ui-text);
+}
+
+.app-shell.ui-theme-modern .button-secondary:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.app-shell.ui-theme-modern .tab {
+  border-color: var(--ui-border);
+  color: var(--ui-text);
+  background: var(--ui-bg);
+}
+
+.app-shell.ui-theme-modern .metric-card {
+  border-color: var(--ui-border);
+  background: var(--ui-bg);
+}
+
+@media (min-width: 769px) {
+  .app-shell.ui-theme-modern .sidebar-dock.sidebar-dock--expanded {
+    box-shadow:
+      12px 0 40px -8px rgba(15, 23, 42, 0.1),
+      0 0 0 1px color-mix(in srgb, #0f172a 6%, transparent);
+  }
+
+  .app-shell.ui-theme-modern .sidebar-dock > .sidebar-toggle {
+    background: linear-gradient(168deg, #ffffff 0%, #f1f6fb 55%, #e8f0f8 100%);
+    color: color-mix(in srgb, var(--ui-muted) 88%, var(--accent) 12%);
+    border-color: color-mix(in srgb, var(--ui-border) 70%, var(--accent) 30%);
+    box-shadow:
+      3px 2px 16px rgba(15, 23, 42, 0.08),
+      0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent),
+      inset 0 1px 0 #fff,
+      inset 3px 0 10px color-mix(in srgb, var(--accent) 8%, transparent);
+  }
+
+  .app-shell.ui-theme-modern .sidebar-dock > .sidebar-toggle:hover {
+    color: var(--accent-hover);
+    background: linear-gradient(168deg, #ffffff 0%, #e8f4fc 50%, #dff0fa 100%);
+    border-color: color-mix(in srgb, var(--ui-border) 50%, var(--accent) 50%);
+  }
+}
+
+body[data-theme="modern"] .modal-backdrop {
+  background: rgba(15, 23, 42, 0.4);
+}
+
+body[data-theme="modern"] .modal-dialog {
+  border-color: var(--ui-border);
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  box-shadow:
+    0 1px 0 rgba(15, 23, 42, 0.04) inset,
+    0 24px 64px -16px rgba(15, 23, 42, 0.14);
+}
+
+body[data-theme="modern"] .modal-close--drawer-external {
+  background: var(--ui-bg);
+  border-color: var(--ui-border);
+  color: var(--ui-text);
+}
+
+body[data-theme="modern"] .confirm-dialog-backdrop {
+  background: rgba(15, 23, 42, 0.4);
+}
+
+body[data-theme="modern"] .confirm-dialog {
+  border-color: var(--ui-border);
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.12);
+}
+
+/* Login moderno (campos com rótulo flutuante) */
 
 .auth-layout.auth-layout--modern .app-canvas {
   background-color: var(--login-canvas);

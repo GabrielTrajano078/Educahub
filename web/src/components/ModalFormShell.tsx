@@ -8,6 +8,12 @@ type ModalFormShellProps = Readonly<{
   beforeDialog?: ReactNode;
   /** Classes extras no dialog (além de modal-dialog modal-dialog--app-form). */
   dialogClassName?: string;
+  /** `drawer`: painel desliza da direita, altura total (ex.: banco de questões). */
+  variant?: "centered" | "drawer";
+  /** Texto auxiliar abaixo do título (ex.: campos obrigatórios). */
+  subtitle?: ReactNode;
+  /** Rodapé fixo com ações (Cancelar / Salvar). */
+  footer?: ReactNode;
   children: ReactNode;
 }>;
 
@@ -15,7 +21,17 @@ type ModalFormShellProps = Readonly<{
  * Carcaça comum dos modais de formulário (prova, questão, turma, aluno):
  * backdrop, bloqueio de scroll, Escape, cabeçalho e corpo rolável.
  */
-export function ModalFormShell({ open, title, onClose, beforeDialog, dialogClassName = "", children }: ModalFormShellProps) {
+export function ModalFormShell({
+  open,
+  title,
+  onClose,
+  beforeDialog,
+  dialogClassName = "",
+  variant = "centered",
+  subtitle,
+  footer,
+  children,
+}: ModalFormShellProps) {
   const titleId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
 
@@ -38,21 +54,61 @@ export function ModalFormShell({ open, title, onClose, beforeDialog, dialogClass
     return null;
   }
 
-  const dialogClasses = ["modal-dialog", "modal-dialog--app-form", dialogClassName.trim()].filter(Boolean).join(" ");
+  const isDrawer = variant === "drawer";
+  const dialogClasses = [
+    "modal-dialog",
+    "modal-dialog--app-form",
+    isDrawer ? "modal-dialog--drawer" : "",
+    dialogClassName.trim(),
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const backdropClasses = ["modal-backdrop", isDrawer ? "modal-backdrop--drawer" : ""].filter(Boolean).join(" ");
 
   return (
-    <div className="modal-backdrop">
+    <div
+      className={backdropClasses}
+      onClick={
+        isDrawer
+          ? (e) => {
+              if (e.target === e.currentTarget) onClose();
+            }
+          : undefined
+      }
+    >
       {beforeDialog ?? null}
-      <dialog open className={dialogClasses} aria-labelledby={titleId}>
+      {isDrawer ? (
+        <button
+          ref={closeRef}
+          type="button"
+          className="modal-close modal-close--drawer-external"
+          onClick={onClose}
+          aria-label="Fechar"
+        >
+          ×
+        </button>
+      ) : null}
+      <dialog
+        open
+        className={dialogClasses}
+        aria-labelledby={titleId}
+        onClick={isDrawer ? (e) => e.stopPropagation() : undefined}
+      >
         <header className="modal-header">
-          <h2 id={titleId} className="modal-title">
-            {title}
-          </h2>
-          <button ref={closeRef} type="button" className="modal-close" onClick={onClose} aria-label="Fechar">
-            ×
-          </button>
+          <div className="modal-header-text">
+            <h2 id={titleId} className="modal-title">
+              {title}
+            </h2>
+            {subtitle ? <p className="modal-subtitle muted small">{subtitle}</p> : null}
+          </div>
+          {!isDrawer ? (
+            <button ref={closeRef} type="button" className="modal-close" onClick={onClose} aria-label="Fechar">
+              ×
+            </button>
+          ) : null}
         </header>
         <div className="modal-body">{children}</div>
+        {footer ? <footer className="modal-footer">{footer}</footer> : null}
       </dialog>
     </div>
   );

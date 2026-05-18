@@ -102,9 +102,11 @@ export function AppLayout() {
 
   useEffect(() => {
     document.body.dataset.appShell = "1";
+    document.body.dataset.theme = "modern";
     document.body.dataset.sidebar = sidebarExpanded ? "full" : "compact";
     return () => {
       delete document.body.dataset.appShell;
+      delete document.body.dataset.theme;
       delete document.body.dataset.sidebar;
     };
   }, [sidebarExpanded]);
@@ -128,7 +130,7 @@ export function AppLayout() {
   const groups = navGroupsForRole(user.role);
 
   return (
-    <div className="app-shell">
+    <div className="app-shell app-shell--modern ui-theme-modern">
       <div className="app-canvas" aria-hidden="true" />
       <div
         ref={dockRef}

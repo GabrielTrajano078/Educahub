@@ -22,7 +22,7 @@ export function LoginPage() {
 
   if (state.status === "loading") {
     return (
-      <main className="auth-layout auth-layout--modern">
+      <main className="auth-layout auth-layout--modern ui-theme-modern">
         <div className="app-canvas" aria-hidden="true" />
         <output className="auth-card auth-card--modern auth-card--loading login-loading" aria-live="polite">
           Carregando sessão…
@@ -58,7 +58,7 @@ export function LoginPage() {
   }
 
   return (
-    <main className="auth-layout auth-layout--modern">
+    <main className="auth-layout auth-layout--modern ui-theme-modern">
       <div className="app-canvas" aria-hidden="true" />
       <section className="auth-card auth-card--modern">
         <header className="login-header-brand">
