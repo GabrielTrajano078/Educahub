@@ -7,7 +7,7 @@ import { UserModel } from "./user.model";
 
 export const usersRouter = Router();
 
-const patchProfessorClassroomsSchema = z.object({
+export const patchProfessorClassroomsSchema = z.object({
   classroomIds: z.array(z.string()),
 });
 

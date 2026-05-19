@@ -228,6 +228,22 @@ export const openApiDocument = {
             type: "array",
             items: objectId,
           },
+          questionCount: { type: "integer", example: 20 },
+          voidedQuestionIds: {
+            type: "array",
+            items: objectId,
+          },
+          blueprint: {
+            type: "array",
+            items: {
+              type: "object",
+              required: ["descriptor", "count"],
+              properties: {
+                descriptor: { type: "string", example: "D1" },
+                count: { type: "integer", example: 3 },
+              },
+            },
+          },
           blueprintByAxis: {
             type: "array",
             items: {
@@ -664,6 +680,9 @@ export const openApiDocument = {
           { name: "classroomId", in: "query", schema: objectId },
           { name: "discipline", in: "query", schema: { type: "string", enum: ["LP", "MAT"] } },
           { name: "grade", in: "query", schema: { type: "string", enum: ["5", "9"] } },
+          { name: "framework", in: "query", schema: { type: "string", enum: ["SAEB"] } },
+          { name: "descriptor", in: "query", schema: { type: "string" } },
+          { name: "axis", in: "query", schema: { type: "string" } },
         ],
         responses: {
           200: { description: "Lista de provas" },

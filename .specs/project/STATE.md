@@ -33,3 +33,10 @@ Checklist manual de cenários (papéis, escopo, 401/403) para a fundação da AP
 
 1. Validar `ROADMAP.md` com stakeholders (secretaria/pedagógico).
 2. Executar `.specs/features/plataforma-avaliacao/tasks.md` (M1: T1→T11), começando por modelo `classroomIds` e autorização em `access.ts`.
+3. **QODE-30** — Especificação em `.specs/features/qode-30-openapi-contract/`; branch `feature/QODE-30-openapi-contract-tests`; implementar após revisão da spec.
+
+## Decisões (adições)
+
+| Data | Decisão | Contexto |
+|------|---------|----------|
+| 2026-05-19 | Contrato OpenAPI ampliado via testes estáticos (auth, questions, exams, results) | QODE-30; spec em `.specs/features/qode-30-openapi-contract/spec.md`. |
