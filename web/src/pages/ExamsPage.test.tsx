@@ -19,13 +19,9 @@ vi.mock("@/api/exams", () => ({
   fetchSimulatedBlueprint: vi.fn(),
 }));
 
-vi.mock("@/components/ui/ConfirmDialog", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/components/ui/ConfirmDialog")>();
-  return {
-    ...actual,
-    useConfirm: () => vi.fn().mockResolvedValue(true),
-  };
-});
+vi.mock("@/components/ui/use-confirm", () => ({
+  useConfirm: () => vi.fn().mockResolvedValue(true),
+}));
 
 const mockedUseAuth = vi.mocked(useAuth);
 const mockedListExams = vi.mocked(listExams);

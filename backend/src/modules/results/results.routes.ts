@@ -3,6 +3,7 @@ import { Router } from "express";
 import { Types } from "mongoose";
 import { buildPublicFileUrl, getUploadRoot, saveBufferToStorage } from "../../lib/file-storage";
 import { createHttpError } from "../../lib/http-error";
+import { getRequestBaseUrl } from "../../lib/request-base-url";
 import { canAccessClassroom, canAccessSchool, canAccessStudent } from "../../lib/access";
 import { suggestIntervention } from "../../lib/pedagogy";
 import { upload } from "../../lib/upload";
@@ -36,10 +37,6 @@ import {
 } from "./results.schemas";
 
 export const resultsRouter = Router();
-
-function getBaseUrl(req: any): string {
-  return `${req.protocol}://${req.get("host")}`;
-}
 
 async function getActiveAnswerKeyOrThrow(examId: Types.ObjectId) {
   const key = await OfficialAnswerKeyModel.findOne({ examId, isActive: true }).lean();
@@ -440,7 +437,7 @@ resultsRouter.get(
           scanType: scan.scanType,
           createdAt: scan.createdAt,
           selectedForResult: scan.selectedForResult,
-          url: buildPublicFileUrl(getBaseUrl(req), scan.storageKey),
+          url: buildPublicFileUrl(getRequestBaseUrl(req), scan.storageKey),
           parsedMarks: scan.parsedMarks,
           omrMetrics: scan.omrMetrics,
         })),
@@ -502,7 +499,7 @@ resultsRouter.post(
         processingStatus: "PENDING",
       });
 
-      const publicUrl = buildPublicFileUrl(getBaseUrl(req), scan.storageKey);
+      const publicUrl = buildPublicFileUrl(getRequestBaseUrl(req), scan.storageKey);
       await AnswerSheetModel.updateOne(
         { _id: sheet._id },
         { $set: { uploadUrl: publicUrl, status: "SUBMITTED", processingStatus: "PENDING" } },

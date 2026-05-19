@@ -5,7 +5,7 @@ import { deleteClassroom, listClassrooms } from "@/api/classes";
 import { listSchools } from "@/api/schools";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { useConfirm } from "@/components/ui/ConfirmDialog";
+import { useConfirm } from "@/components/ui/use-confirm";
 import { FeedbackModal, type FeedbackModalState } from "@/components/ui/FeedbackModal";
 import { FeedbackMessage } from "@/components/ui/FeedbackMessage";
 import { ClassroomNewModal } from "@/pages/ClassroomNewPage";

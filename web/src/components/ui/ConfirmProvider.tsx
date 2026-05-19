@@ -1,38 +1,12 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useId,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { useCallback, useId, useRef, useState, type ReactNode } from "react";
 import { Button } from "./Button";
-
-export type ConfirmOptions = {
-  title: string;
-  description?: string;
-  confirmLabel?: string;
-  cancelLabel?: string;
-  variant?: "danger" | "default";
-};
+import { ConfirmContext } from "./confirm-dialog-context";
+import type { ConfirmOptions } from "./confirm-dialog-types";
 
 type Pending = {
   options: ConfirmOptions;
   resolve: (value: boolean) => void;
 };
-
-const ConfirmContext = createContext<((opts: ConfirmOptions) => Promise<boolean>) | null>(null);
-
-/* eslint-disable react-refresh/only-export-components -- hook acoplado ao provider do mesmo módulo */
-export function useConfirm(): (opts: ConfirmOptions) => Promise<boolean> {
-  const fn = useContext(ConfirmContext);
-  if (!fn) {
-    throw new Error("useConfirm deve ser usado dentro de ConfirmProvider.");
-  }
-  return fn;
-}
-/* eslint-enable react-refresh/only-export-components */
 
 export function ConfirmProvider({ children }: { children: ReactNode }) {
   const [pending, setPending] = useState<Pending | null>(null);

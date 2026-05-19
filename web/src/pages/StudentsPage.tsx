@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FeedbackModal, type FeedbackModalState } from "@/components/ui/FeedbackModal";
 import { FeedbackMessage } from "@/components/ui/FeedbackMessage";
-import { useConfirm } from "@/components/ui/ConfirmDialog";
+import { useConfirm } from "@/components/ui/use-confirm";
 import { TableActionIcon } from "@/components/table/TableActionIcons";
 import { ApiError } from "@/lib/api-client";
 import { parseStudentRow, readExcelFirstSheet } from "@/lib/excel-import";

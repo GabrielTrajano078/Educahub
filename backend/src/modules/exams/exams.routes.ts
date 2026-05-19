@@ -4,6 +4,7 @@ import type { z } from "zod";
 import { Types } from "mongoose";
 import { buildPublicFileUrl, saveBufferToStorage } from "../../lib/file-storage";
 import { createHttpError } from "../../lib/http-error";
+import { getRequestBaseUrl } from "../../lib/request-base-url";
 import { canAccessClassroom, canAccessSchool, canAccessStudent } from "../../lib/access";
 import { upload } from "../../lib/upload";
 import { requireAuth, requireRole } from "../../middlewares/auth";
@@ -33,10 +34,6 @@ import { ResultModel } from "../results/result.model";
 import { AnswerSheetScanModel } from "../results/answer-sheet-scan.model";
 
 export const examsRouter = Router();
-
-function getBaseUrl(req: any): string {
-  return `${req.protocol}://${req.get("host")}`;
-}
 
 async function canAccessExamRecord(
   user: AuthUser,
@@ -627,7 +624,7 @@ examsRouter.post(
       res.status(201).json({
         id: String(file._id),
         storageKey: file.storageKey,
-        url: buildPublicFileUrl(getBaseUrl(req), file.storageKey),
+        url: buildPublicFileUrl(getRequestBaseUrl(req), file.storageKey),
       });
     } catch (error) {
       next(error);
@@ -907,7 +904,7 @@ examsRouter.post(
 
       res.status(201).json({
         batchFileId: String(file._id),
-        url: buildPublicFileUrl(getBaseUrl(req), file.storageKey),
+        url: buildPublicFileUrl(getRequestBaseUrl(req), file.storageKey),
         totalSheets: sheets.length,
         answerSheetIds: sheets.map((sheet) => String(sheet._id)),
       });

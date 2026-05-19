@@ -2,7 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes, useSearchParams } from "react-r
 import { AuthProvider } from "@/auth/AuthProvider";
 import { QueryProvider } from "@/providers/QueryProvider";
 import { AppLayout } from "@/layout/AppLayout";
-import { ConfirmProvider } from "@/components/ui/ConfirmDialog";
+import { ConfirmProvider } from "@/components/ui/ConfirmProvider";
 import { BootstrapPage } from "@/pages/BootstrapPage";
 import { ClassroomPage } from "@/pages/ClassroomPage";
 import { ClassesPage } from "@/pages/ClassesPage";

@@ -4,7 +4,7 @@ import { useAuth } from "@/auth/useAuth";
 import { deleteSchool, listSchools } from "@/api/schools";
 import { TableActionIcon } from "@/components/table/TableActionIcons";
 import { Button } from "@/components/ui/Button";
-import { useConfirm } from "@/components/ui/ConfirmDialog";
+import { useConfirm } from "@/components/ui/use-confirm";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FeedbackModal, type FeedbackModalState } from "@/components/ui/FeedbackModal";
 import { ApiError } from "@/lib/api-client";
