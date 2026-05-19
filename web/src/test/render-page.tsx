@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, type RenderOptions } from "@testing-library/react";
 import type { ReactElement } from "react";
 import { MemoryRouter } from "react-router-dom";
+import { ConfirmProvider } from "@/components/ui/ConfirmDialog";
 
 type RenderPageOptions = RenderOptions & {
   initialEntries?: string[];
@@ -18,7 +19,9 @@ export function renderPage(ui: ReactElement, options?: RenderPageOptions) {
 
   return render(
     <QueryClientProvider client={client}>
-      <MemoryRouter initialEntries={initialEntries}>{ui}</MemoryRouter>
+      <ConfirmProvider>
+        <MemoryRouter initialEntries={initialEntries}>{ui}</MemoryRouter>
+      </ConfirmProvider>
     </QueryClientProvider>,
     renderOptions,
   );

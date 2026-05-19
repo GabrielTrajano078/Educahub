@@ -6,12 +6,23 @@ import { ApiError } from "@/lib/api-client";
 import { renderPage } from "@/test/render-page";
 import { SchoolsPage } from "./SchoolsPage";
 
+const navigate = vi.fn();
+
+vi.mock("react-router-dom", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("react-router-dom")>();
+  return {
+    ...actual,
+    useNavigate: () => navigate,
+  };
+});
+
 vi.mock("@/auth/useAuth", () => ({
   useAuth: vi.fn(),
 }));
 
 vi.mock("@/api/schools", () => ({
   listSchools: vi.fn(),
+  deleteSchool: vi.fn(),
 }));
 
 const mockedUseAuth = vi.mocked(useAuth);
@@ -48,7 +59,8 @@ describe("SchoolsPage", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("lista escolas e link de resumo", async () => {
+  it("lista escolas e navega para resumo ao ver detalhes", async () => {
+    navigate.mockReset();
     mockedUseAuth.mockReturnValue(adminAuth);
     mockedListSchools.mockResolvedValueOnce([
       {
@@ -65,10 +77,9 @@ describe("SchoolsPage", () => {
     expect(await screen.findByText("EMEF Centro")).toBeInTheDocument();
     expect(screen.getByText("Fortaleza")).toBeInTheDocument();
     expect(screen.getByText("2304400")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Resumo" })).toHaveAttribute(
-      "href",
-      "/escola/resumo?schoolId=507f1f77bcf86cd799439011",
-    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Ver EMEF Centro" }));
+    expect(navigate).toHaveBeenCalledWith("/escola/resumo?schoolId=507f1f77bcf86cd799439011");
   });
 
   it("mostra estado vazio quando não há escolas", async () => {

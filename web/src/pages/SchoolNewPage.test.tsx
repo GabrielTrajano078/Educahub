@@ -82,14 +82,11 @@ describe("SchoolNewPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Cadastrar escola" }));
 
     await waitFor(() => {
-      expect(mockedCreateSchool).toHaveBeenCalledWith(
-        {
-          name: "EMEF Centro",
-          city: "Fortaleza",
-          municipalityCode: "2304400",
-        },
-        expect.anything(),
-      );
+      expect(mockedCreateSchool).toHaveBeenCalledWith({
+        name: "EMEF Centro",
+        city: "Fortaleza",
+        municipalityCode: "2304400",
+      });
     });
 
     fireEvent.click(await screen.findByRole("button", { name: "OK" }));
@@ -131,7 +128,7 @@ describe("SchoolNewPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Cadastrar escola" }));
 
     await waitFor(() => {
-      expect(mockedCreateSchool).toHaveBeenCalledWith({ name: "EMEF Norte" }, expect.anything());
+      expect(mockedCreateSchool).toHaveBeenCalledWith({ name: "EMEF Norte" });
     });
   });
 });
