@@ -142,6 +142,11 @@ A biblioteca `xlsx` no `web/package.json` é frequentemente apontada em auditori
 **Critérios de aceite**
 - Documento ou comentário de decisão; pipeline ou processo para rever alertas periodicamente.
 
+**Status de implementação (QODE-32)**
+- Revisão registrada em `docs/web-xlsx-risk-review.md`.
+- Auditoria executada com `npm audit --omit=dev` no `web`.
+- Decisão documentada com mitigação e rotina periódica de reavaliação.
+
 ---
 
 ### Título
@@ -187,6 +192,10 @@ O Playwright sobe apenas o Vite (`web`). O `global-setup` chama `/health` no `ba
 
 **Critérios de aceite**
 - Novo membro reproduz E2E com sucesso seguindo apenas a doc; variáveis de ambiente (`E2E_SKIP_API_SMOKE`, `E2E_BASE_URL`) listadas.
+
+**Status de implementação (QODE-35)**
+- Guia atualizado em `e2e/README.md` com bootstrap full stack (Mongo + API + web + Playwright), troubleshooting e variáveis.
+- Passos reproduzíveis com comandos de `up`, `test`, `diagnose` e `down`.
 
 ---
 
