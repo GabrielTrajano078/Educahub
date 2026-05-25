@@ -62,6 +62,19 @@ describe("createSchoolSchema", () => {
     );
   });
 
+  it("rejeita campos extras no body (strict)", () => {
+    const r = createSchoolSchema.safeParse({
+      name: "EMEF Centro",
+      extraField: true,
+    });
+
+    expect(r.success).toBe(false);
+    if (r.success) {
+      throw new Error("esperado falha de parse");
+    }
+    expect(r.error.issues.some((i) => i.code === "unrecognized_keys")).toBe(true);
+  });
+
   it("rejeita normalizedName no body (strict)", () => {
     const r = createSchoolSchema.safeParse({
       name: "EMEF Centro",

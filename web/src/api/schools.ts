@@ -23,7 +23,8 @@ export async function createSchool(body: CreateSchoolBody): Promise<{ id: string
 export type UpdateSchoolBody = Partial<CreateSchoolBody>;
 
 export async function fetchSchool(id: string): Promise<School> {
-  return apiFetch(`/api/schools/${id}`);
+  const data = await apiFetch<unknown>(`/api/schools/${id}`);
+  return schoolSchema.parse(data);
 }
 
 export async function updateSchool(id: string, body: UpdateSchoolBody): Promise<void> {

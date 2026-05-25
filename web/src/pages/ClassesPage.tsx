@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/useAuth";
 import { deleteClassroom, listClassrooms } from "@/api/classes";
 import { listSchools } from "@/api/schools";
+import { schoolDisplayName } from "@/schemas/school";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { useConfirm } from "@/components/ui/use-confirm";
@@ -74,7 +75,7 @@ export function ClassesPage() {
   const schoolNameById = useMemo(() => {
     const m = new Map<string, string>();
     for (const s of schoolsQ.data ?? []) {
-      m.set(s._id, s.normalizedName);
+      m.set(s._id, schoolDisplayName(s));
     }
     return m;
   }, [schoolsQ.data]);

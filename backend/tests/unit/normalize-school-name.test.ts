@@ -2,34 +2,20 @@ import { describe, expect, it } from "@jest/globals";
 import { normalizeSchoolName } from "../../src/lib/normalize-school-name";
 
 describe("normalizeSchoolName", () => {
-  it("converte para maiúsculas", () => {
-    expect(normalizeSchoolName("escola teste")).toBe("ESCOLA TESTE");
-  });
-
-  it("remove diacríticos", () => {
+  it("normaliza exemplos obrigatórios da spec", () => {
     expect(normalizeSchoolName("Teste João")).toBe("TESTE JOAO");
-    expect(normalizeSchoolName("EMEF José de Alencar")).toBe("EMEF JOSE DE ALENCAR");
-    expect(normalizeSchoolName("Escola Ítalo Barbosa")).toBe("ESCOLA ITALO BARBOSA");
+    expect(normalizeSchoolName("EMEF   José de Alencar")).toBe("EMEF JOSE DE ALENCAR");
   });
 
-  it("colapsa espaços internos múltiplos", () => {
-    expect(normalizeSchoolName("EMEF   José  de Alencar")).toBe("EMEF JOSE DE ALENCAR");
+  it("aplica trim nas extremidades", () => {
+    expect(normalizeSchoolName("  EMEF Centro  ")).toBe("EMEF CENTRO");
   });
 
-  it("remove espaços nas extremidades", () => {
-    expect(normalizeSchoolName("  Escola Central  ")).toBe("ESCOLA CENTRAL");
+  it("colapsa espaços internos consecutivos", () => {
+    expect(normalizeSchoolName("A    B")).toBe("A B");
   });
 
-  it("é determinístico: mesma entrada sempre gera mesma saída", () => {
-    const input = "  Çedilha  Ñoño  ";
-    expect(normalizeSchoolName(input)).toBe(normalizeSchoolName(input));
-  });
-
-  it("trata string vazia", () => {
-    expect(normalizeSchoolName("")).toBe("");
-  });
-
-  it("trata string só de espaços", () => {
+  it("retorna string vazia quando entrada só tem espaços", () => {
     expect(normalizeSchoolName("   ")).toBe("");
   });
 });

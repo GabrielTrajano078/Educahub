@@ -2,7 +2,7 @@ import type { ComponentProps } from "react";
 import { SelectField } from "@/components/SelectField";
 import { Button } from "@/components/ui/Button";
 import { FeedbackMessage } from "@/components/ui/FeedbackMessage";
-import type { School } from "@/schemas/school";
+import { schoolDisplayName, type School } from "@/schemas/school";
 import type { User } from "@/schemas/auth";
 
 export type NewClassroomFormProps = Readonly<{
@@ -46,7 +46,7 @@ export function NewClassroomForm({
           style={{ gridColumn: "1 / -1" }}
           value={schoolId}
           onValueChange={onSchoolIdChange}
-          options={schools.map((s) => ({ value: s._id, label: s.normalizedName }))}
+          options={schools.map((s) => ({ value: s._id, label: schoolDisplayName(s) }))}
           emptyOption={{ label: "Selecione…" }}
           required
         />

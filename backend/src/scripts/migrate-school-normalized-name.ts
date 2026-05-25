@@ -1,83 +1,45 @@
 /**
- * Script de migração: backfill de normalizedName nas escolas existentes.
+ * CLI da migracao normalizedName (conexao propria).
  *
  * Uso:
- *   DATABASE_URL=mongodb://127.0.0.1:27017/spas_saeb \
- *     npx ts-node --transpile-only src/scripts/migrate-school-normalized-name.ts
- *
- * O script:
- *   1. Encontra todas as escolas sem normalizedName.
- *   2. Calcula normalizedName para cada uma.
- *   3. Detecta colisões (mesmo municipalityCode + normalizedName) e as reporta
- *      sem atualizar as duplicatas.
- *   4. Atualiza as escolas sem colisão.
+ *   DATABASE_URL=... npm run migrate:schools
+ *   DATABASE_URL=... npm run migrate:schools -- --no-apply-index
  */
 
 import mongoose from "mongoose";
-import { normalizeSchoolName } from "../lib/normalize-school-name";
-import { SchoolModel } from "../modules/schools/school.model";
+import { connectDatabase } from "../config/db";
+import {
+  migrateSchoolNormalizedName,
+  SchoolNormalizedNameCollisionError,
+} from "../lib/migrations/migrate-school-normalized-name";
 
 async function main() {
-  const uri = process.env.DATABASE_URL;
-  if (!uri) {
-    console.error("DATABASE_URL não definido.");
-    process.exit(1);
-  }
+  const applyIndex = !process.argv.includes("--no-apply-index");
 
-  await mongoose.connect(uri);
+  await connectDatabase();
   console.log("Conectado ao MongoDB.");
 
-  const schools = await SchoolModel.find({ normalizedName: { $exists: false } }).lean();
-  console.log(`Escolas sem normalizedName: ${schools.length}`);
-
-  if (schools.length === 0) {
-    console.log("Nada a migrar.");
-    await mongoose.disconnect();
-    return;
-  }
-
-  type Candidate = { _id: mongoose.Types.ObjectId; name: string; municipalityCode?: string; normalizedName: string };
-  const candidates: Candidate[] = schools.map((s) => ({
-    _id: s._id as mongoose.Types.ObjectId,
-    name: s.name,
-    municipalityCode: s.municipalityCode,
-    normalizedName: normalizeSchoolName(s.name),
-  }));
-
-  // Detectar colisões entre os candidatos e documentos já existentes
-  const collisions: Candidate[] = [];
-  const toUpdate: Candidate[] = [];
-
-  for (const c of candidates) {
-    const collision = await SchoolModel.exists({
-      _id: { $ne: c._id },
-      municipalityCode: c.municipalityCode ?? null,
-      normalizedName: c.normalizedName,
-    });
-    if (collision) {
-      collisions.push(c);
+  try {
+    const { updated } = await migrateSchoolNormalizedName({ applyIndex });
+    console.log(`Backfill: ${updated} documento(s) atualizado(s).`);
+    console.log("Nenhuma colisão encontrada.");
+    if (applyIndex) {
+      console.log("Índices de normalizedName aplicados.");
     } else {
-      toUpdate.push(c);
+      console.log("Índices não alterados (--no-apply-index).");
     }
-  }
-
-  if (collisions.length > 0) {
-    console.warn(`\n⚠  ${collisions.length} colisão(ões) detectada(s) — requer resolução manual:`);
-    for (const c of collisions) {
-      console.warn(`  id=${String(c._id)}  name="${c.name}"  normalizedName="${c.normalizedName}"  municipalityCode=${c.municipalityCode ?? "(null)"}`);
+  } catch (err) {
+    if (err instanceof SchoolNormalizedNameCollisionError) {
+      console.error("Colisões (municipalityCode + normalizedName):");
+      console.error(JSON.stringify(err.collisions, null, 2));
+      await mongoose.disconnect();
+      process.exit(2);
     }
-  }
-
-  if (toUpdate.length > 0) {
-    const ops = toUpdate.map((c) => ({
-      updateOne: { filter: { _id: c._id }, update: { $set: { normalizedName: c.normalizedName } } },
-    }));
-    const result = await SchoolModel.bulkWrite(ops);
-    console.log(`\n✓ ${result.modifiedCount} escola(s) atualizada(s) com normalizedName.`);
+    throw err;
   }
 
   await mongoose.disconnect();
-  console.log("Concluído.");
+  console.log("Migração concluída.");
 }
 
 main().catch((err) => {

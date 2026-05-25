@@ -4,6 +4,7 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 import { listClassrooms } from "@/api/classes";
 import { listExams } from "@/api/exams";
 import { listSchools } from "@/api/schools";
+import { schoolDisplayName } from "@/schemas/school";
 import { fetchClassroomHeatmap, fetchClassroomRanking, fetchClassroomReport } from "@/api/results";
 import { SelectField } from "@/components/SelectField";
 import { useAuth } from "@/auth/useAuth";
@@ -38,7 +39,7 @@ export function ClassroomPage() {
       return null;
     }
     const school = schoolsQ.data?.find((s) => s._id === c.schoolId);
-    return { classroom: c, schoolName: school?.normalizedName };
+    return { classroom: c, schoolName: school ? schoolDisplayName(school) : undefined };
   }, [classesQ.data, classroomId, schoolsQ.data]);
 
   const examsQ = useQuery({

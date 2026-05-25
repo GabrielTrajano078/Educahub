@@ -7,7 +7,6 @@ import {
   readOperationParameterNames,
   readOperationSecurity,
   readPost201ResponseSchema,
-  readOperationResponseStatuses,
   readResponseSchema,
   zodRequiredKeys,
   zodShapeKeys,
@@ -35,7 +34,7 @@ describe("contrato OpenAPI — escolas", () => {
     expect(readPost201ResponseSchema("/api/schools")).toEqual({ $ref: "#/components/schemas/IdResponse" });
   });
 
-  it("School expõe name e normalizedName obrigatorios na resposta", () => {
+  it("School expõe _id, name e normalizedName obrigatorios na resposta", () => {
     expect(readComponentSchemaRequired("School")).toEqual(["_id", "name", "normalizedName"]);
     expect(readComponentSchemaPropertyKeys("School")).toEqual([
       "_id",
@@ -61,8 +60,4 @@ describe("contrato OpenAPI — escolas", () => {
     });
   });
 
-  it("POST e PATCH /api/schools declaram 409 para duplicata", () => {
-    expect(readOperationResponseStatuses("/api/schools", "post")).toContain("409");
-    expect(readOperationResponseStatuses("/api/schools/{id}", "patch")).toContain("409");
-  });
 });

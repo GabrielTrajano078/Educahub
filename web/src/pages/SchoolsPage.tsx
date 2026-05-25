@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/useAuth";
 import { deleteSchool, listSchools } from "@/api/schools";
+import { schoolDisplayName } from "@/schemas/school";
 import { TableActionIcon } from "@/components/table/TableActionIcons";
 import { Button } from "@/components/ui/Button";
 import { useConfirm } from "@/components/ui/use-confirm";
@@ -87,9 +88,11 @@ export function SchoolsPage() {
                 </tr>
               </thead>
               <tbody>
-                {q.data.map((s) => (
+                {q.data.map((s) => {
+                  const label = schoolDisplayName(s);
+                  return (
                   <tr key={s._id}>
-                    <td>{s.normalizedName}</td>
+                    <td>{label}</td>
                     <td className="muted small">{s.city ?? "—"}</td>
                     <td className="muted small">{s.municipalityCode ?? "—"}</td>
                     <td className="col-actions">
@@ -97,7 +100,7 @@ export function SchoolsPage() {
                         type="button"
                         className="ghost btn-compact"
                         onClick={() => navigate(`/escola/resumo?schoolId=${s._id}`)}
-                        aria-label={`Ver ${s.normalizedName}`}
+                        aria-label={`Ver ${label}`}
                         title="Ver detalhes"
                       >
                         <TableActionIcon name="open" />
@@ -106,7 +109,7 @@ export function SchoolsPage() {
                         type="button"
                         className="ghost btn-compact"
                         onClick={() => navigate(`/escolas/nova?edit=${s._id}`)}
-                        aria-label={`Editar ${s.normalizedName}`}
+                        aria-label={`Editar ${label}`}
                         title="Editar"
                       >
                         <TableActionIcon name="edit" />
@@ -115,12 +118,12 @@ export function SchoolsPage() {
                         type="button"
                         className="btn-danger-text btn-compact"
                         disabled={deleteM.isPending}
-                        aria-label={`Excluir ${s.normalizedName}`}
+                        aria-label={`Excluir ${label}`}
                         title="Excluir"
                         onClick={async () => {
                           const ok = await confirm({
                             title: "Excluir escola",
-                            description: `Excluir escola "${s.normalizedName}"? Esta ação não pode ser desfeita.`,
+                            description: `Excluir escola "${label}"? Esta ação não pode ser desfeita.`,
                             variant: "danger",
                             confirmLabel: "Excluir",
                             cancelLabel: "Cancelar",
@@ -133,7 +136,8 @@ export function SchoolsPage() {
                       </button>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

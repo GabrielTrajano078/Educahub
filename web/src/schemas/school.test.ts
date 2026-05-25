@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { schoolSchema } from "./school";
+import { schoolDisplayName, schoolSchema } from "./school";
 
 describe("schoolSchema", () => {
   it("aceita escola minima com normalizedName", () => {
     expect(
-      schoolSchema.parse({ _id: "507f1f77bcf86cd799439011", name: "EMEF Centro", normalizedName: "EMEF CENTRO" }),
+      schoolSchema.parse({
+        _id: "507f1f77bcf86cd799439011",
+        name: "EMEF Centro",
+        normalizedName: "EMEF CENTRO",
+      }),
     ).toEqual({
       _id: "507f1f77bcf86cd799439011",
       name: "EMEF Centro",
@@ -16,8 +20,8 @@ describe("schoolSchema", () => {
     expect(
       schoolSchema.parse({
         _id: "507f1f77bcf86cd799439011",
-        name: "EMEF Centro",
-        normalizedName: "EMEF CENTRO",
+        name: "Teste João",
+        normalizedName: "TESTE JOAO",
         city: "Fortaleza",
         municipalityCode: "2304400",
         createdAt: "2026-05-13T00:00:00.000Z",
@@ -25,8 +29,8 @@ describe("schoolSchema", () => {
       }),
     ).toEqual({
       _id: "507f1f77bcf86cd799439011",
-      name: "EMEF Centro",
-      normalizedName: "EMEF CENTRO",
+      name: "Teste João",
+      normalizedName: "TESTE JOAO",
       city: "Fortaleza",
       municipalityCode: "2304400",
       createdAt: "2026-05-13T00:00:00.000Z",
@@ -34,13 +38,19 @@ describe("schoolSchema", () => {
     });
   });
 
+  it("rejeita payload sem normalizedName", () => {
+    const r = schoolSchema.safeParse({ _id: "507f1f77bcf86cd799439011", name: "EMEF Centro" });
+    expect(r.success).toBe(false);
+  });
+
   it("rejeita payload sem _id", () => {
     const r = schoolSchema.safeParse({ name: "EMEF Centro", normalizedName: "EMEF CENTRO" });
     expect(r.success).toBe(false);
   });
+});
 
-  it("rejeita payload sem normalizedName", () => {
-    const r = schoolSchema.safeParse({ _id: "507f1f77bcf86cd799439011", name: "EMEF Centro" });
-    expect(r.success).toBe(false);
+describe("schoolDisplayName", () => {
+  it("retorna normalizedName para exibição", () => {
+    expect(schoolDisplayName({ normalizedName: "TESTE JOAO" })).toBe("TESTE JOAO");
   });
 });

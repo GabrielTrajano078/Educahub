@@ -65,31 +65,15 @@ describe("GET /api/schools", () => {
   });
 
   it("200 admin lista escolas sem filtro de municipio", async () => {
-    const rows = [{ _id: validOid, name: "EMEF Centro" }];
+    const rows = [{ _id: validOid, name: "EMEF Centro", normalizedName: "EMEF CENTRO" }];
     const { sort } = mockSchoolFindReturns(rows);
 
     const res = await request(app).get("/api/schools").set("Authorization", bearer("admin"));
 
     expect(res.status).toBe(200);
-    expect(res.body).toEqual([{ _id: validOid, name: "EMEF Centro", normalizedName: "EMEF CENTRO" }]);
+    expect(res.body).toEqual(rows);
     expect(SchoolModel.find).toHaveBeenCalledWith({});
     expect(sort).toHaveBeenCalledWith({ normalizedName: 1 });
-  });
-
-  it("200 inclui normalizedName derivado em documento legado sem o campo", async () => {
-    mockSchoolFindReturns([
-      {
-        _id: validOid,
-        name: "EMEF Jose de Alencar",
-        city: "Fortaleza",
-        municipalityCode: "2304400",
-      },
-    ]);
-
-    const res = await request(app).get("/api/schools").set("Authorization", bearer("admin"));
-
-    expect(res.status).toBe(200);
-    expect(res.body[0].normalizedName).toBe("EMEF JOSE DE ALENCAR");
   });
 
   it("200 gestor restringe consulta ao municipio do perfil", async () => {
@@ -103,7 +87,7 @@ describe("GET /api/schools", () => {
     expect(SchoolModel.find).toHaveBeenCalledWith({ municipalityCode: "2304400" });
   });
 
-  it("200 aplica nameContains com regex escapado", async () => {
+  it("200 aplica nameContains com regex escapado em normalizedName", async () => {
     mockSchoolFindReturns([]);
 
     const res = await request(app)
@@ -216,6 +200,45 @@ describe("POST /api/schools", () => {
     });
   });
 
+  it("201 persiste normalizedName derivado de name com acentos", async () => {
+    const createdId = new Types.ObjectId(validOid);
+    asAsyncMock(SchoolModel.create).mockResolvedValue({ _id: createdId });
+
+    const res = await request(app)
+      .post("/api/schools")
+      .set("Authorization", bearer("admin"))
+      .send({ name: "Teste João", municipalityCode: "2304400" });
+
+    expect(res.status).toBe(201);
+    expect(SchoolModel.create).toHaveBeenCalledWith({
+      name: "Teste João",
+      normalizedName: "TESTE JOAO",
+      municipalityCode: "2304400",
+    });
+  });
+
+  it("409 em duplicata municipalityCode + normalizedName", async () => {
+    asAsyncMock(SchoolModel.create).mockRejectedValue({ code: 11000 });
+
+    const res = await request(app)
+      .post("/api/schools")
+      .set("Authorization", bearer("admin"))
+      .send({ name: "EMEF Centro", municipalityCode: "2304400" });
+
+    expect(res.status).toBe(409);
+    expect(res.body).toEqual({ message: "Ja existe escola com este nome no municipio informado." });
+  });
+
+  it("400 rejeita normalizedName no body", async () => {
+    const res = await request(app)
+      .post("/api/schools")
+      .set("Authorization", bearer("admin"))
+      .send({ name: "EMEF Centro", normalizedName: "EMEF CENTRO" });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ message: "Erro de validacao", issues: expect.any(Array) });
+  });
+
   it("201 gestor preenche municipalityCode do perfil quando omitido", async () => {
     const createdId = new Types.ObjectId(validOid);
     asAsyncMock(SchoolModel.create).mockResolvedValue({ _id: createdId });
@@ -252,33 +275,21 @@ describe("POST /api/schools", () => {
     });
   });
 
-  it("409 quando nome normalizado duplica no municipio", async () => {
-    asAsyncMock(SchoolModel.create).mockRejectedValue({ code: 11000 });
-
-    const res = await request(app)
-      .post("/api/schools")
-      .set("Authorization", bearer("admin"))
-      .send({ name: "EMEF Centro", municipalityCode: "2304400" });
-
-    expect(res.status).toBe(409);
-    expect(res.body).toEqual({ message: "Já existe uma escola com este nome no município." });
-  });
-
-  it("400 quando corpo inclui normalizedName", async () => {
-    const res = await request(app)
-      .post("/api/schools")
-      .set("Authorization", bearer("admin"))
-      .send({ name: "EMEF Centro", normalizedName: "EMEF CENTRO" });
-
-    expect(res.status).toBe(400);
-    expect(res.body).toEqual({ message: "Erro de validacao", issues: expect.any(Array) });
-  });
-
   it("400 quando municipalityCode nao tem 7 digitos", async () => {
     const res = await request(app)
       .post("/api/schools")
       .set("Authorization", bearer("admin"))
       .send({ name: "EMEF Centro", municipalityCode: "23044" });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ message: "Erro de validacao", issues: expect.any(Array) });
+  });
+
+  it("400 quando corpo inclui campos extras (strict)", async () => {
+    const res = await request(app)
+      .post("/api/schools")
+      .set("Authorization", bearer("admin"))
+      .send({ name: "EMEF Centro", extraField: true });
 
     expect(res.status).toBe(400);
     expect(res.body).toEqual({ message: "Erro de validacao", issues: expect.any(Array) });

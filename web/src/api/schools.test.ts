@@ -14,7 +14,9 @@ describe("listSchools", () => {
   });
 
   it("busca sem query quando filtro vazio", async () => {
-    mockedApiFetch.mockResolvedValueOnce([{ _id: "s1", name: "EMEF Centro", normalizedName: "EMEF CENTRO" }]);
+    mockedApiFetch.mockResolvedValueOnce([
+      { _id: "s1", name: "EMEF Centro", normalizedName: "EMEF CENTRO" },
+    ]);
 
     const rows = await listSchools();
 

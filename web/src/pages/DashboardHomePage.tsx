@@ -5,6 +5,7 @@ import { useAuth } from "@/auth/useAuth";
 import { listClassrooms } from "@/api/classes";
 import { listExams } from "@/api/exams";
 import { listSchools } from "@/api/schools";
+import { schoolDisplayName } from "@/schemas/school";
 import { ApiError } from "@/lib/api-client";
 import { Button } from "@/components/ui/Button";
 import { MetricCard } from "@/components/ui/MetricCard";
@@ -134,7 +135,7 @@ export function DashboardHomePage() {
             <ul className="list">
               {schoolsQuery.data.map((s) => (
                 <li key={s._id}>
-                  <strong>{s.normalizedName}</strong>
+                  <strong>{schoolDisplayName(s)}</strong>
                   {s.city ? <span className="muted"> — {s.city}</span> : null}
                   {" · "}
                   <Link to={`/escola/resumo?schoolId=${s._id}`}>Resumo</Link>

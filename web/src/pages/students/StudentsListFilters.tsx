@@ -1,5 +1,5 @@
 import { SelectField } from "@/components/SelectField";
-import type { School } from "@/schemas/school";
+import { schoolDisplayName, type School } from "@/schemas/school";
 
 export type ClassroomOption = Readonly<{ value: string; label: string }>;
 
@@ -37,7 +37,7 @@ export function StudentsListFilters({
           label={<span className="field-label">Escola</span>}
           value={schoolId}
           onValueChange={onSchoolIdChange}
-          options={schools.map((s) => ({ value: s._id, label: s.normalizedName }))}
+          options={schools.map((s) => ({ value: s._id, label: schoolDisplayName(s) }))}
           emptyOption={{ label: "Todas" }}
         />
       ) : null}

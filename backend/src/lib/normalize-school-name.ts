@@ -1,12 +1,9 @@
 /**
- * Normalização canônica do nome de escola para persistência e exibição.
- * Algoritmo determinístico: trim → colapsar espaços → remover diacríticos → maiúsculas pt-BR.
+ * Nome canônico de escola para leitura, busca e unicidade por município (QODE-40).
+ * Ordem: trim → colapsar espaços → remover diacríticos → maiúsculas pt-BR.
  */
 export function normalizeSchoolName(name: string): string {
-  return name
-    .trim()
-    .replace(/\s+/g, " ")
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .toLocaleUpperCase("pt-BR");
+  const trimmed = name.trim().replace(/\s+/g, " ");
+  const withoutDiacritics = trimmed.normalize("NFD").replace(/\p{M}/gu, "");
+  return withoutDiacritics.toLocaleUpperCase("pt-BR");
 }

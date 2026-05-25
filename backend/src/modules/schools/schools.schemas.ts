@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-/** normalizedName é derivado no servidor; nunca aceito no body de entrada. */
 export const createSchoolSchema = z
   .object({
     name: z.string().min(2),
