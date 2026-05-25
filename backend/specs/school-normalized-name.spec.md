@@ -258,16 +258,20 @@ flowchart TD
   G --> B
 ```
 
-### 7.2 Script de migração
+### 7.2 Script de migração e ledger
 
-**Arquivo sugerido:** `backend/src/scripts/migrate-school-normalized-name.ts`
+**Arquivos:** `backend/src/scripts/migrate-school-normalized-name.ts`, `backend/src/lib/migrations/migration-ledger.ts`
+
+**Ledger:** coleção `app_migrations` com `{ name: "school-normalized-name-v1", appliedAt }`. Após a primeira aplicação bem-sucedida, startup e CLI **não** reescaneiam a coleção (consulta única ao ledger).
 
 Comportamento:
 
-1. Backfill em lote (`bulkWrite` ou `updateMany` por cursor).
+1. Backfill em lote por cursor (somente se v1 ainda não estiver no ledger).
 2. Listar pares `(municipalityCode, normalizedName)` com `count > 1`.
 3. Exit code ≠ 0 se houver colisões (CI/ops pode falhar de propósito).
-4. Flag `--apply-index` só após revisão humana.
+4. Registrar `school-normalized-name-v1` em `app_migrations`.
+5. CLI `--force` reexecuta sem depender do ledger (dev/ops).
+6. Evolução do algoritmo → nova migração `school-normalized-name-v2` (não reutilizar v1).
 
 ### 7.3 Rollback
 

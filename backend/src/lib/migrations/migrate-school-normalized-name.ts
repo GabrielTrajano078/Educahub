@@ -1,6 +1,8 @@
 import type { Collection, Document } from "mongodb";
 import { normalizeSchoolName } from "../normalize-school-name";
 import { SchoolModel } from "../../modules/schools/school.model";
+import { isMigrationApplied, recordMigrationApplied } from "./migration-ledger";
+import { SCHOOL_NORMALIZED_NAME_MIGRATION_V1 } from "./school-normalized-name.constants";
 
 export type SchoolNormalizedNameCollision = {
   municipalityCode: string;
@@ -22,18 +24,34 @@ export class SchoolNormalizedNameCollisionError extends Error {
 }
 
 export type MigrateSchoolNormalizedNameResult = {
+  migrationId: string;
+  /** true quando o ledger indica que a migração v1 já foi aplicada (sem scan). */
+  skipped: boolean;
   updated: number;
   collisions: SchoolNormalizedNameCollision[];
 };
 
-/**
- * Backfill de normalizedName, verificacao de colisoes e indices (idempotente).
- * Requer conexao Mongoose ativa.
- */
-export async function migrateSchoolNormalizedName(options?: {
+export type MigrateSchoolNormalizedNameOptions = {
   applyIndex?: boolean;
-}): Promise<MigrateSchoolNormalizedNameResult> {
+  /** Ignora o ledger e reexecuta backfill/índices (uso manual/dev). */
+  force?: boolean;
+};
+
+/**
+ * Backfill de normalizedName, verificação de colisões e índices.
+ * Executa no máximo uma vez por ambiente (registro em app_migrations), salvo `force`.
+ */
+export async function migrateSchoolNormalizedName(
+  options?: MigrateSchoolNormalizedNameOptions,
+): Promise<MigrateSchoolNormalizedNameResult> {
+  const migrationId = SCHOOL_NORMALIZED_NAME_MIGRATION_V1;
   const applyIndex = options?.applyIndex ?? true;
+  const force = options?.force ?? false;
+
+  if (!force && (await isMigrationApplied(migrationId))) {
+    return { migrationId, skipped: true, updated: 0, collisions: [] };
+  }
+
   const collection = SchoolModel.collection;
   const cursor = collection.find({});
   let updated = 0;
@@ -79,7 +97,9 @@ export async function migrateSchoolNormalizedName(options?: {
     await applySchoolNormalizedNameIndexes(collection);
   }
 
-  return { updated, collisions: [] };
+  await recordMigrationApplied(migrationId);
+
+  return { migrationId, skipped: false, updated, collisions: [] };
 }
 
 async function applySchoolNormalizedNameIndexes(collection: Collection<Document>): Promise<void> {

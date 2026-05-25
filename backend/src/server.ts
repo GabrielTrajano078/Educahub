@@ -11,9 +11,14 @@ async function runStartupMigrations(): Promise<void> {
     return;
   }
 
-  const { updated } = await migrateSchoolNormalizedName();
-  if (updated > 0) {
-    console.log(`[migrate] Escolas: ${updated} documento(s) com normalizedName atualizado(s).`);
+  const result = await migrateSchoolNormalizedName();
+  if (result.skipped) {
+    return;
+  }
+  if (result.updated > 0) {
+    console.log(`[migrate] Escolas (${result.migrationId}): ${result.updated} documento(s) atualizado(s).`);
+  } else {
+    console.log(`[migrate] Escolas (${result.migrationId}): migração aplicada.`);
   }
 }
 

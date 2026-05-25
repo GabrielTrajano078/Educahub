@@ -74,5 +74,5 @@ Todos executados dentro de `backend/`.
 | `npm run db:down` | Para os containers |
 | `npm run db:reset` | Remove volume e sobe de novo |
 | `npm run seed` | Executa apenas o seed |
-| `npm run migrate:schools` | Backfill de `normalizedName` em escolas (CLI, sem subir a API) |
-| `npm run dev` | Inicia a API em modo desenvolvimento (roda a migracao de escolas no startup) |
+| `npm run migrate:schools` | Backfill de `normalizedName` em escolas (CLI; registra em `app_migrations`) |
+| `npm run dev` | Inicia a API (na 1ª subida executa migração v1; depois só consulta o ledger) |

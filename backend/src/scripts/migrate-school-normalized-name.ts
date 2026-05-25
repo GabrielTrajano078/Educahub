@@ -1,9 +1,13 @@
 /**
- * CLI da migracao normalizedName (conexao propria).
+ * CLI da migração normalizedName (conexão própria).
  *
  * Uso:
- *   DATABASE_URL=... npm run migrate:schools
- *   DATABASE_URL=... npm run migrate:schools -- --no-apply-index
+ *   npm run migrate:schools
+ *   npm run migrate:schools -- --force
+ *   npm run migrate:schools -- --no-apply-index
+ *
+ * A migração v1 fica registrada em `app_migrations` e não reexecuta no startup/CLI
+ * até usar --force ou criar uma nova migração (ex.: school-normalized-name-v2).
  */
 
 import mongoose from "mongoose";
@@ -15,14 +19,21 @@ import {
 
 async function main() {
   const applyIndex = !process.argv.includes("--no-apply-index");
+  const force = process.argv.includes("--force");
 
   await connectDatabase();
   console.log("Conectado ao MongoDB.");
 
   try {
-    const { updated } = await migrateSchoolNormalizedName({ applyIndex });
-    console.log(`Backfill: ${updated} documento(s) atualizado(s).`);
+    const result = await migrateSchoolNormalizedName({ applyIndex, force });
+    if (result.skipped) {
+      console.log(`Migração ${result.migrationId} já aplicada (use --force para reexecutar).`);
+      await mongoose.disconnect();
+      return;
+    }
+    console.log(`Backfill: ${result.updated} documento(s) atualizado(s).`);
     console.log("Nenhuma colisão encontrada.");
+    console.log(`Registrada em app_migrations: ${result.migrationId}`);
     if (applyIndex) {
       console.log("Índices de normalizedName aplicados.");
     } else {
