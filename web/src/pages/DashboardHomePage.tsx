@@ -134,7 +134,7 @@ export function DashboardHomePage() {
             <ul className="list">
               {schoolsQuery.data.map((s) => (
                 <li key={s._id}>
-                  <strong>{s.name}</strong>
+                  <strong>{s.normalizedName}</strong>
                   {s.city ? <span className="muted"> — {s.city}</span> : null}
                   {" · "}
                   <Link to={`/escola/resumo?schoolId=${s._id}`}>Resumo</Link>

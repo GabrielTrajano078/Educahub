@@ -52,7 +52,7 @@ export function SchoolSummaryPage() {
           const summary = await fetchSchoolSummary(s._id);
           return {
             schoolId: s._id,
-            schoolName: s.name,
+            schoolName: s.normalizedName,
             classrooms: summary.classrooms,
           };
         }),
@@ -77,7 +77,7 @@ export function SchoolSummaryPage() {
     const c = classesQ.data?.find((x) => x._id === viewClassroomId);
     if (!c) return null;
     const school = schoolsQ.data?.find((s) => s._id === c.schoolId);
-    return { classroom: c, schoolName: school?.name };
+    return { classroom: c, schoolName: school?.normalizedName };
   }, [classesQ.data, viewClassroomId, schoolsQ.data]);
 
   const modalExamsQ = useQuery({
@@ -113,7 +113,7 @@ export function SchoolSummaryPage() {
   const rows = effectiveSchoolId
     ? (summaryQ.data?.classrooms ?? []).map((c) => ({
         ...c,
-        schoolName: schoolsQ.data?.find((s) => s._id === effectiveSchoolId)?.name ?? "—",
+        schoolName: schoolsQ.data?.find((s) => s._id === effectiveSchoolId)?.normalizedName ?? "—",
       }))
     : (allSummaryQ.data ?? []).flatMap((schoolSummary) =>
         schoolSummary.classrooms.map((c) => ({
@@ -269,7 +269,7 @@ export function SchoolSummaryPage() {
             onValueChange={(v) => {
               setSp(v ? { schoolId: v } : {});
             }}
-            options={(schoolsQ.data ?? []).map((s) => ({ value: s._id, label: s.name }))}
+            options={(schoolsQ.data ?? []).map((s) => ({ value: s._id, label: s.normalizedName }))}
             emptyOption={{ label: "Todas" }}
           />
         ) : (

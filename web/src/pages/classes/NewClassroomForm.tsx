@@ -46,7 +46,7 @@ export function NewClassroomForm({
           style={{ gridColumn: "1 / -1" }}
           value={schoolId}
           onValueChange={onSchoolIdChange}
-          options={schools.map((s) => ({ value: s._id, label: s.name }))}
+          options={schools.map((s) => ({ value: s._id, label: s.normalizedName }))}
           emptyOption={{ label: "Selecione…" }}
           required
         />

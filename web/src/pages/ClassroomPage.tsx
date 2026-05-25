@@ -38,7 +38,7 @@ export function ClassroomPage() {
       return null;
     }
     const school = schoolsQ.data?.find((s) => s._id === c.schoolId);
-    return { classroom: c, schoolName: school?.name };
+    return { classroom: c, schoolName: school?.normalizedName };
   }, [classesQ.data, classroomId, schoolsQ.data]);
 
   const examsQ = useQuery({

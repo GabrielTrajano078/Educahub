@@ -73,7 +73,7 @@ describe("GET /api/schools", () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual(rows);
     expect(SchoolModel.find).toHaveBeenCalledWith({});
-    expect(sort).toHaveBeenCalledWith({ name: 1 });
+    expect(sort).toHaveBeenCalledWith({ normalizedName: 1 });
   });
 
   it("200 gestor restringe consulta ao municipio do perfil", async () => {
@@ -97,7 +97,7 @@ describe("GET /api/schools", () => {
 
     expect(res.status).toBe(200);
     expect(SchoolModel.find).toHaveBeenCalledWith({
-      name: { $regex: "EMEF \\(centro\\)", $options: "i" },
+      normalizedName: { $regex: "EMEF \\(CENTRO\\)", $options: "i" },
     });
   });
 
@@ -122,7 +122,7 @@ describe("GET /api/schools", () => {
     expect(res.status).toBe(200);
     expect(SchoolModel.find).toHaveBeenCalledWith({
       municipalityCode: "2304400",
-      name: { $regex: "EMEF", $options: "i" },
+      normalizedName: { $regex: "EMEF", $options: "i" },
     });
   });
 });
@@ -194,6 +194,7 @@ describe("POST /api/schools", () => {
     expect(res.body).toEqual({ id: validOid });
     expect(SchoolModel.create).toHaveBeenCalledWith({
       name: "EMEF Centro",
+      normalizedName: "EMEF CENTRO",
       city: "Fortaleza",
       municipalityCode: "2304400",
     });
@@ -212,6 +213,7 @@ describe("POST /api/schools", () => {
     expect(res.body).toEqual({ id: validOid });
     expect(SchoolModel.create).toHaveBeenCalledWith({
       name: "EMEF Centro",
+      normalizedName: "EMEF CENTRO",
       city: "Fortaleza",
       municipalityCode: "2304400",
     });
@@ -229,6 +231,7 @@ describe("POST /api/schools", () => {
     expect(res.status).toBe(201);
     expect(SchoolModel.create).toHaveBeenCalledWith({
       name: "EMEF Sul",
+      normalizedName: "EMEF SUL",
       municipalityCode: "2304400",
     });
   });

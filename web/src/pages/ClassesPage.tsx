@@ -74,7 +74,7 @@ export function ClassesPage() {
   const schoolNameById = useMemo(() => {
     const m = new Map<string, string>();
     for (const s of schoolsQ.data ?? []) {
-      m.set(s._id, s.name);
+      m.set(s._id, s.normalizedName);
     }
     return m;
   }, [schoolsQ.data]);

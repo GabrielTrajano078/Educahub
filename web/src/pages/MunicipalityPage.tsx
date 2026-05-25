@@ -51,7 +51,7 @@ export function MunicipalityPage() {
             {q.data.schools.map((s) => (
               <div key={s.schoolId} style={{ marginBottom: "1.5rem" }}>
                 <h3 style={{ marginBottom: "0.35rem" }}>
-                  {s.name}{" "}
+                  {s.normalizedName}{" "}
                   <Link to={`/escola/resumo?schoolId=${s.schoolId}`} className="small">
                     Resumo
                   </Link>

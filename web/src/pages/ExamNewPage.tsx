@@ -124,7 +124,7 @@ function ExamMetadataFields({
             label="Escola"
             value={schoolValue}
             onValueChange={onSchoolPickChange}
-            options={schools.map((s) => ({ value: s._id, label: s.name }))}
+            options={schools.map((s) => ({ value: s._id, label: s.normalizedName }))}
             emptyOption={{ label: "Selecione…" }}
             className="field--span-2"
             required

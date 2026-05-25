@@ -89,7 +89,7 @@ export function SchoolsPage() {
               <tbody>
                 {q.data.map((s) => (
                   <tr key={s._id}>
-                    <td>{s.name}</td>
+                    <td>{s.normalizedName}</td>
                     <td className="muted small">{s.city ?? "—"}</td>
                     <td className="muted small">{s.municipalityCode ?? "—"}</td>
                     <td className="col-actions">
@@ -97,7 +97,7 @@ export function SchoolsPage() {
                         type="button"
                         className="ghost btn-compact"
                         onClick={() => navigate(`/escola/resumo?schoolId=${s._id}`)}
-                        aria-label={`Ver ${s.name}`}
+                        aria-label={`Ver ${s.normalizedName}`}
                         title="Ver detalhes"
                       >
                         <TableActionIcon name="open" />
@@ -106,7 +106,7 @@ export function SchoolsPage() {
                         type="button"
                         className="ghost btn-compact"
                         onClick={() => navigate(`/escolas/nova?edit=${s._id}`)}
-                        aria-label={`Editar ${s.name}`}
+                        aria-label={`Editar ${s.normalizedName}`}
                         title="Editar"
                       >
                         <TableActionIcon name="edit" />
@@ -115,12 +115,12 @@ export function SchoolsPage() {
                         type="button"
                         className="btn-danger-text btn-compact"
                         disabled={deleteM.isPending}
-                        aria-label={`Excluir ${s.name}`}
+                        aria-label={`Excluir ${s.normalizedName}`}
                         title="Excluir"
                         onClick={async () => {
                           const ok = await confirm({
                             title: "Excluir escola",
-                            description: `Excluir escola "${s.name}"? Esta ação não pode ser desfeita.`,
+                            description: `Excluir escola "${s.normalizedName}"? Esta ação não pode ser desfeita.`,
                             variant: "danger",
                             confirmLabel: "Excluir",
                             cancelLabel: "Cancelar",

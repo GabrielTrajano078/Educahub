@@ -14,12 +14,12 @@ describe("listSchools", () => {
   });
 
   it("busca sem query quando filtro vazio", async () => {
-    mockedApiFetch.mockResolvedValueOnce([{ _id: "s1", name: "EMEF Centro" }]);
+    mockedApiFetch.mockResolvedValueOnce([{ _id: "s1", name: "EMEF Centro", normalizedName: "EMEF CENTRO" }]);
 
     const rows = await listSchools();
 
     expect(mockedApiFetch).toHaveBeenCalledWith("/api/schools");
-    expect(rows).toEqual([{ _id: "s1", name: "EMEF Centro" }]);
+    expect(rows).toEqual([{ _id: "s1", name: "EMEF Centro", normalizedName: "EMEF CENTRO" }]);
   });
 
   it("envia nameContains na query string", async () => {

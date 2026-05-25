@@ -29,7 +29,7 @@ export function ClassesListFilters({
           label={<span className="field-label">Escola</span>}
           value={schoolId}
           onValueChange={onSchoolIdChange}
-          options={schools.map((s) => ({ value: s._id, label: s.name }))}
+          options={schools.map((s) => ({ value: s._id, label: s.normalizedName }))}
           emptyOption={{ label: "Todas" }}
         />
       ) : null}
