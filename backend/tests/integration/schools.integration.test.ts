@@ -236,6 +236,38 @@ describe("POST /api/schools", () => {
     });
   });
 
+  it("409 quando nome normalizado duplica no municipio", async () => {
+    asAsyncMock(SchoolModel.create).mockRejectedValue({ code: 11000 });
+
+    const res = await request(app)
+      .post("/api/schools")
+      .set("Authorization", bearer("admin"))
+      .send({ name: "EMEF Centro", municipalityCode: "2304400" });
+
+    expect(res.status).toBe(409);
+    expect(res.body).toEqual({ message: "Já existe uma escola com este nome no município." });
+  });
+
+  it("400 quando corpo inclui normalizedName", async () => {
+    const res = await request(app)
+      .post("/api/schools")
+      .set("Authorization", bearer("admin"))
+      .send({ name: "EMEF Centro", normalizedName: "EMEF CENTRO" });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ message: "Erro de validacao", issues: expect.any(Array) });
+  });
+
+  it("400 quando municipalityCode nao tem 7 digitos", async () => {
+    const res = await request(app)
+      .post("/api/schools")
+      .set("Authorization", bearer("admin"))
+      .send({ name: "EMEF Centro", municipalityCode: "23044" });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ message: "Erro de validacao", issues: expect.any(Array) });
+  });
+
   it("500 quando create falha", async () => {
     asAsyncMock(SchoolModel.create).mockRejectedValue(new Error("falha persistencia"));
 

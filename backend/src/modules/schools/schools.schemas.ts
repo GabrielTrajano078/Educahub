@@ -5,7 +5,10 @@ export const createSchoolSchema = z
   .object({
     name: z.string().min(2),
     city: z.string().min(2).optional(),
-    municipalityCode: z.string().min(2).optional(),
+    municipalityCode: z
+      .string()
+      .regex(/^\d{7}$/, "Codigo IBGE deve ter 7 digitos.")
+      .optional(),
   })
   .strict();
 

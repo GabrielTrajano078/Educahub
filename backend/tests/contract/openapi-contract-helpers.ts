@@ -134,6 +134,16 @@ export function readPost201ResponseSchema(path: string): unknown {
   return post?.responses?.["201"]?.content?.["application/json"]?.schema;
 }
 
+export function readResponseSchema(path: string, method: HttpMethod, status: string): unknown {
+  const op = readOperation(path, method);
+  return op?.responses?.[status]?.content?.["application/json"]?.schema;
+}
+
+export function readOperationResponseStatuses(path: string, method: HttpMethod): string[] {
+  const op = readOperation(path, method);
+  return sortFieldNames(Object.keys(op?.responses ?? {}));
+}
+
 export function readRequestBodySchemaRef(path: string, method: HttpMethod): unknown {
   const op = readOperation(path, method);
   return op?.requestBody?.content?.["application/json"]?.schema;
