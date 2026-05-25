@@ -18,4 +18,15 @@ describe("normalizeSchoolName", () => {
   it("retorna string vazia quando entrada só tem espaços", () => {
     expect(normalizeSchoolName("   ")).toBe("");
   });
+
+  it("reconstrói nome digitado com espaço entre letras", () => {
+    expect(normalizeSchoolName("J o s e   d e   A l e n c a r")).toBe("JOSE DE ALENCAR");
+    expect(normalizeSchoolName("J O S E D E A L E N C A R D E S O U Z A")).toBe(
+      "JOSE DE ALENCAR DE SOUZA",
+    );
+  });
+
+  it("não altera nomes já em palavras normais", () => {
+    expect(normalizeSchoolName("EMEF Centro")).toBe("EMEF CENTRO");
+  });
 });
