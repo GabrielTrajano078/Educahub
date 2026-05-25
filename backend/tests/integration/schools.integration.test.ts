@@ -71,9 +71,25 @@ describe("GET /api/schools", () => {
     const res = await request(app).get("/api/schools").set("Authorization", bearer("admin"));
 
     expect(res.status).toBe(200);
-    expect(res.body).toEqual(rows);
+    expect(res.body).toEqual([{ _id: validOid, name: "EMEF Centro", normalizedName: "EMEF CENTRO" }]);
     expect(SchoolModel.find).toHaveBeenCalledWith({});
     expect(sort).toHaveBeenCalledWith({ normalizedName: 1 });
+  });
+
+  it("200 inclui normalizedName derivado em documento legado sem o campo", async () => {
+    mockSchoolFindReturns([
+      {
+        _id: validOid,
+        name: "EMEF Jose de Alencar",
+        city: "Fortaleza",
+        municipalityCode: "2304400",
+      },
+    ]);
+
+    const res = await request(app).get("/api/schools").set("Authorization", bearer("admin"));
+
+    expect(res.status).toBe(200);
+    expect(res.body[0].normalizedName).toBe("EMEF JOSE DE ALENCAR");
   });
 
   it("200 gestor restringe consulta ao municipio do perfil", async () => {

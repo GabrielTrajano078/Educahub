@@ -6,6 +6,7 @@ import { requireAuth, requireRole } from "../../middlewares/auth";
 import { SchoolModel } from "./school.model";
 import { ClassroomModel } from "../classes/classroom.model";
 import { createSchoolSchema, listSchoolsSchema, schoolIdParamsSchema, updateSchoolSchema } from "./schools.schemas";
+import { serializeSchool } from "./school-serialize";
 
 export const schoolsRouter = Router();
 
@@ -39,7 +40,7 @@ schoolsRouter.get("/", requireAuth, requireRole("admin", "gestor"), async (req, 
     }
 
     const schools = await SchoolModel.find(query).sort({ normalizedName: 1 }).lean();
-    res.json(schools);
+    res.json(schools.map(serializeSchool));
   } catch (error) {
     next(error);
   }
@@ -98,7 +99,7 @@ schoolsRouter.get("/:id", requireAuth, requireRole("admin", "gestor"), async (re
         return;
       }
     }
-    res.json(school);
+    res.json(serializeSchool(school));
   } catch (error) {
     next(error);
   }
