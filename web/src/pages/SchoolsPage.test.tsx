@@ -65,6 +65,7 @@ describe("SchoolsPage", () => {
       {
         _id: "507f1f77bcf86cd799439011",
         name: "EMEF Centro",
+        normalizedName: "EMEF CENTRO",
         city: "Fortaleza",
         municipalityCode: "2304400",
       },
@@ -74,11 +75,11 @@ describe("SchoolsPage", () => {
     renderPage(<SchoolsPage />);
 
     expect(await screen.findByRole("heading", { name: "Escolas" })).toBeInTheDocument();
-    expect(await screen.findByText("EMEF Centro")).toBeInTheDocument();
+    expect(await screen.findByText("EMEF CENTRO")).toBeInTheDocument();
     expect(screen.getByText("Fortaleza")).toBeInTheDocument();
     expect(screen.getByText("2304400")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Ver EMEF Centro" }));
+    fireEvent.click(screen.getByRole("button", { name: "Ver EMEF CENTRO" }));
     expect(navigate).toHaveBeenCalledWith("/escola/resumo?schoolId=507f1f77bcf86cd799439011");
   });
 

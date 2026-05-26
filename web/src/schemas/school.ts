@@ -3,6 +3,7 @@ import { z } from "zod";
 export const schoolSchema = z.object({
   _id: z.string(),
   name: z.string(),
+  normalizedName: z.string(),
   city: z.string().optional(),
   municipalityCode: z.string().optional(),
   createdAt: z.string().optional(),
@@ -10,3 +11,8 @@ export const schoolSchema = z.object({
 });
 
 export type School = z.infer<typeof schoolSchema>;
+
+/** Nome visível em telas alimentadas por GET (QODE-40). */
+export function schoolDisplayName(school: Pick<School, "normalizedName">): string {
+  return school.normalizedName;
+}

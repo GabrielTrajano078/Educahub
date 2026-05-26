@@ -15,6 +15,7 @@
     "test:mutation:dry": "stryker run --dryRunOnly",
     "check": "tsc -p tsconfig.json --noEmit",
     "seed": "tsx src/scripts/seed.ts",
+    "migrate:schools": "tsx src/scripts/migrate-school-normalized-name.ts",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "db:reset": "docker compose down -v && docker compose up -d --wait",

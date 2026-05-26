@@ -7,6 +7,7 @@ import {
   readOperationParameterNames,
   readOperationSecurity,
   readPost201ResponseSchema,
+  readResponseSchema,
   zodRequiredKeys,
   zodShapeKeys,
 } from "./openapi-contract-helpers";
@@ -32,4 +33,31 @@ describe("contrato OpenAPI — escolas", () => {
   it("POST 201 referencia IdResponse", () => {
     expect(readPost201ResponseSchema("/api/schools")).toEqual({ $ref: "#/components/schemas/IdResponse" });
   });
+
+  it("School expõe _id, name e normalizedName obrigatorios na resposta", () => {
+    expect(readComponentSchemaRequired("School")).toEqual(["_id", "name", "normalizedName"]);
+    expect(readComponentSchemaPropertyKeys("School")).toEqual([
+      "_id",
+      "city",
+      "createdAt",
+      "municipalityCode",
+      "name",
+      "normalizedName",
+      "updatedAt",
+    ]);
+  });
+
+  it("GET /api/schools 200 retorna array de School", () => {
+    expect(readResponseSchema("/api/schools", "get", "200")).toEqual({
+      type: "array",
+      items: { $ref: "#/components/schemas/School" },
+    });
+  });
+
+  it("GET /api/schools/{id} 200 referencia School", () => {
+    expect(readResponseSchema("/api/schools/{id}", "get", "200")).toEqual({
+      $ref: "#/components/schemas/School",
+    });
+  });
+
 });

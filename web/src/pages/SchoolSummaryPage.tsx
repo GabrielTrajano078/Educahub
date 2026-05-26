@@ -5,6 +5,7 @@ import { useAuth } from "@/auth/useAuth";
 import { listClassrooms } from "@/api/classes";
 import { listExams } from "@/api/exams";
 import { listSchools } from "@/api/schools";
+import { schoolDisplayName } from "@/schemas/school";
 import { fetchClassroomHeatmap, fetchClassroomRanking, fetchClassroomReport, fetchSchoolSummary } from "@/api/results";
 import { ModalFormPanel, ModalFormShell } from "@/components/ModalFormShell";
 import { SelectField } from "@/components/SelectField";
@@ -52,7 +53,7 @@ export function SchoolSummaryPage() {
           const summary = await fetchSchoolSummary(s._id);
           return {
             schoolId: s._id,
-            schoolName: s.name,
+            schoolName: schoolDisplayName(s),
             classrooms: summary.classrooms,
           };
         }),
@@ -77,7 +78,7 @@ export function SchoolSummaryPage() {
     const c = classesQ.data?.find((x) => x._id === viewClassroomId);
     if (!c) return null;
     const school = schoolsQ.data?.find((s) => s._id === c.schoolId);
-    return { classroom: c, schoolName: school?.name };
+    return { classroom: c, schoolName: school ? schoolDisplayName(school) : undefined };
   }, [classesQ.data, viewClassroomId, schoolsQ.data]);
 
   const modalExamsQ = useQuery({
@@ -113,7 +114,10 @@ export function SchoolSummaryPage() {
   const rows = effectiveSchoolId
     ? (summaryQ.data?.classrooms ?? []).map((c) => ({
         ...c,
-        schoolName: schoolsQ.data?.find((s) => s._id === effectiveSchoolId)?.name ?? "—",
+        schoolName: (() => {
+          const school = schoolsQ.data?.find((s) => s._id === effectiveSchoolId);
+          return school ? schoolDisplayName(school) : "—";
+        })(),
       }))
     : (allSummaryQ.data ?? []).flatMap((schoolSummary) =>
         schoolSummary.classrooms.map((c) => ({
@@ -269,7 +273,7 @@ export function SchoolSummaryPage() {
             onValueChange={(v) => {
               setSp(v ? { schoolId: v } : {});
             }}
-            options={(schoolsQ.data ?? []).map((s) => ({ value: s._id, label: s.name }))}
+            options={(schoolsQ.data ?? []).map((s) => ({ value: s._id, label: schoolDisplayName(s) }))}
             emptyOption={{ label: "Todas" }}
           />
         ) : (

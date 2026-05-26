@@ -65,7 +65,7 @@ describe("GET /api/schools", () => {
   });
 
   it("200 admin lista escolas sem filtro de municipio", async () => {
-    const rows = [{ _id: validOid, name: "EMEF Centro" }];
+    const rows = [{ _id: validOid, name: "EMEF Centro", normalizedName: "EMEF CENTRO" }];
     const { sort } = mockSchoolFindReturns(rows);
 
     const res = await request(app).get("/api/schools").set("Authorization", bearer("admin"));
@@ -73,7 +73,7 @@ describe("GET /api/schools", () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual(rows);
     expect(SchoolModel.find).toHaveBeenCalledWith({});
-    expect(sort).toHaveBeenCalledWith({ name: 1 });
+    expect(sort).toHaveBeenCalledWith({ normalizedName: 1 });
   });
 
   it("200 gestor restringe consulta ao municipio do perfil", async () => {
@@ -87,7 +87,7 @@ describe("GET /api/schools", () => {
     expect(SchoolModel.find).toHaveBeenCalledWith({ municipalityCode: "2304400" });
   });
 
-  it("200 aplica nameContains com regex escapado", async () => {
+  it("200 aplica nameContains com regex escapado em normalizedName", async () => {
     mockSchoolFindReturns([]);
 
     const res = await request(app)
@@ -97,7 +97,7 @@ describe("GET /api/schools", () => {
 
     expect(res.status).toBe(200);
     expect(SchoolModel.find).toHaveBeenCalledWith({
-      name: { $regex: "EMEF \\(centro\\)", $options: "i" },
+      normalizedName: { $regex: "EMEF \\(CENTRO\\)", $options: "i" },
     });
   });
 
@@ -122,7 +122,7 @@ describe("GET /api/schools", () => {
     expect(res.status).toBe(200);
     expect(SchoolModel.find).toHaveBeenCalledWith({
       municipalityCode: "2304400",
-      name: { $regex: "EMEF", $options: "i" },
+      normalizedName: { $regex: "EMEF", $options: "i" },
     });
   });
 });
@@ -194,9 +194,49 @@ describe("POST /api/schools", () => {
     expect(res.body).toEqual({ id: validOid });
     expect(SchoolModel.create).toHaveBeenCalledWith({
       name: "EMEF Centro",
+      normalizedName: "EMEF CENTRO",
       city: "Fortaleza",
       municipalityCode: "2304400",
     });
+  });
+
+  it("201 persiste normalizedName derivado de name com acentos", async () => {
+    const createdId = new Types.ObjectId(validOid);
+    asAsyncMock(SchoolModel.create).mockResolvedValue({ _id: createdId });
+
+    const res = await request(app)
+      .post("/api/schools")
+      .set("Authorization", bearer("admin"))
+      .send({ name: "Teste João", municipalityCode: "2304400" });
+
+    expect(res.status).toBe(201);
+    expect(SchoolModel.create).toHaveBeenCalledWith({
+      name: "Teste João",
+      normalizedName: "TESTE JOAO",
+      municipalityCode: "2304400",
+    });
+  });
+
+  it("409 em duplicata municipalityCode + normalizedName", async () => {
+    asAsyncMock(SchoolModel.create).mockRejectedValue({ code: 11000 });
+
+    const res = await request(app)
+      .post("/api/schools")
+      .set("Authorization", bearer("admin"))
+      .send({ name: "EMEF Centro", municipalityCode: "2304400" });
+
+    expect(res.status).toBe(409);
+    expect(res.body).toEqual({ message: "Ja existe escola com este nome no municipio informado." });
+  });
+
+  it("400 rejeita normalizedName no body", async () => {
+    const res = await request(app)
+      .post("/api/schools")
+      .set("Authorization", bearer("admin"))
+      .send({ name: "EMEF Centro", normalizedName: "EMEF CENTRO" });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ message: "Erro de validacao", issues: expect.any(Array) });
   });
 
   it("201 gestor preenche municipalityCode do perfil quando omitido", async () => {
@@ -212,6 +252,7 @@ describe("POST /api/schools", () => {
     expect(res.body).toEqual({ id: validOid });
     expect(SchoolModel.create).toHaveBeenCalledWith({
       name: "EMEF Centro",
+      normalizedName: "EMEF CENTRO",
       city: "Fortaleza",
       municipalityCode: "2304400",
     });
@@ -229,8 +270,29 @@ describe("POST /api/schools", () => {
     expect(res.status).toBe(201);
     expect(SchoolModel.create).toHaveBeenCalledWith({
       name: "EMEF Sul",
+      normalizedName: "EMEF SUL",
       municipalityCode: "2304400",
     });
+  });
+
+  it("400 quando municipalityCode nao tem 7 digitos", async () => {
+    const res = await request(app)
+      .post("/api/schools")
+      .set("Authorization", bearer("admin"))
+      .send({ name: "EMEF Centro", municipalityCode: "23044" });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ message: "Erro de validacao", issues: expect.any(Array) });
+  });
+
+  it("400 quando corpo inclui campos extras (strict)", async () => {
+    const res = await request(app)
+      .post("/api/schools")
+      .set("Authorization", bearer("admin"))
+      .send({ name: "EMEF Centro", extraField: true });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ message: "Erro de validacao", issues: expect.any(Array) });
   });
 
   it("500 quando create falha", async () => {

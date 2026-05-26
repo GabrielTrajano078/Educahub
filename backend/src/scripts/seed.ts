@@ -11,6 +11,7 @@ import { QuestionModel } from "../modules/questions/question.model";
 import { generateUniqueSheetCode } from "../modules/results/answer-sheet-code";
 import { AnswerSheetModel } from "../modules/results/answer-sheet.model";
 import { ResultModel } from "../modules/results/result.model";
+import { normalizeSchoolName } from "../lib/normalize-school-name";
 import { SchoolModel } from "../modules/schools/school.model";
 import { StudentModel } from "../modules/students/student.model";
 
@@ -144,11 +145,13 @@ async function upsertQuestion(question: SeedQuestion) {
 async function main() {
   await connectDatabase();
 
+  const schoolName = "EMEF Jose de Alencar";
   const school = await SchoolModel.findOneAndUpdate(
-    { name: "EMEF Jose de Alencar" },
+    { name: schoolName },
     {
       $set: {
-        name: "EMEF Jose de Alencar",
+        name: schoolName,
+        normalizedName: normalizeSchoolName(schoolName),
         city: "Fortaleza",
         municipalityCode: "2304400",
       },

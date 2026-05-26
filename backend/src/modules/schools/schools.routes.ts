@@ -1,12 +1,21 @@
 import { Router } from "express";
 import { Types } from "mongoose";
 import { escapeRegex } from "../../lib/escape-regex";
+import { normalizeSchoolName } from "../../lib/normalize-school-name";
 import { requireAuth, requireRole } from "../../middlewares/auth";
 import { SchoolModel } from "./school.model";
 import { ClassroomModel } from "../classes/classroom.model";
 import { createSchoolSchema, listSchoolsSchema, schoolIdParamsSchema, updateSchoolSchema } from "./schools.schemas";
 
 export const schoolsRouter = Router();
+
+function isDuplicateKeyError(error: unknown): error is { code: number } {
+  return Boolean(error && typeof error === "object" && "code" in error && (error as { code?: number }).code === 11000);
+}
+
+function trimmedName(name: string): string {
+  return name.trim();
+}
 
 schoolsRouter.get("/", requireAuth, requireRole("admin", "gestor"), async (req, res, next) => {
   try {
@@ -15,7 +24,7 @@ schoolsRouter.get("/", requireAuth, requireRole("admin", "gestor"), async (req, 
     const query: Record<string, unknown> = {
       ...(nameTrim
         ? {
-            name: { $regex: escapeRegex(nameTrim), $options: "i" },
+            normalizedName: { $regex: escapeRegex(normalizeSchoolName(nameTrim)), $options: "i" },
           }
         : {}),
     };
@@ -28,7 +37,7 @@ schoolsRouter.get("/", requireAuth, requireRole("admin", "gestor"), async (req, 
       query.municipalityCode = req.user!.municipalityCode;
     }
 
-    const schools = await SchoolModel.find(query).sort({ name: 1 }).lean();
+    const schools = await SchoolModel.find(query).sort({ normalizedName: 1 }).lean();
     res.json(schools);
   } catch (error) {
     next(error);
@@ -50,14 +59,23 @@ schoolsRouter.post("/", requireAuth, requireRole("admin", "gestor"), async (req,
       }
     }
 
+    const name = trimmedName(data.name);
     const school = await SchoolModel.create({
-      ...data,
+      name,
+      normalizedName: normalizeSchoolName(name),
+      ...(data.city !== undefined ? { city: data.city } : {}),
       ...(req.user!.role === "gestor" && !data.municipalityCode
         ? { municipalityCode: req.user!.municipalityCode }
-        : {}),
+        : data.municipalityCode !== undefined
+          ? { municipalityCode: data.municipalityCode }
+          : {}),
     });
     res.status(201).json({ id: String(school._id) });
   } catch (error) {
+    if (isDuplicateKeyError(error)) {
+      res.status(409).json({ message: "Ja existe escola com este nome no municipio informado." });
+      return;
+    }
     next(error);
   }
 });
@@ -103,19 +121,23 @@ schoolsRouter.patch("/:id", requireAuth, requireRole("admin", "gestor"), async (
       }
     }
 
-    await SchoolModel.updateOne(
-      { _id: id },
-      {
-        $set: {
-          ...(data.name !== undefined ? { name: data.name } : {}),
-          ...(data.city !== undefined ? { city: data.city } : {}),
-          ...(data.municipalityCode !== undefined ? { municipalityCode: data.municipalityCode } : {}),
-        },
-      },
-    );
+    const $set: Record<string, unknown> = {
+      ...(data.city !== undefined ? { city: data.city } : {}),
+      ...(data.municipalityCode !== undefined ? { municipalityCode: data.municipalityCode } : {}),
+    };
+    if (data.name !== undefined) {
+      const name = trimmedName(data.name);
+      $set.name = name;
+      $set.normalizedName = normalizeSchoolName(name);
+    }
 
+    await SchoolModel.updateOne({ _id: id }, { $set });
     res.status(204).send();
   } catch (error) {
+    if (isDuplicateKeyError(error)) {
+      res.status(409).json({ message: "Ja existe escola com este nome no municipio informado." });
+      return;
+    }
     next(error);
   }
 });

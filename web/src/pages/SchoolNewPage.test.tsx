@@ -1,6 +1,7 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createSchool } from "@/api/schools";
+import { ApiError } from "@/lib/api-client";
 import { searchMunicipiosByName } from "@/api/ibge";
 import { useAuth } from "@/auth/useAuth";
 import { renderPage } from "@/test/render-page";
@@ -103,6 +104,21 @@ describe("SchoolNewPage", () => {
 
     expect(await screen.findByText("Informe o nome da escola (mínimo 2 caracteres).")).toBeInTheDocument();
     expect(mockedCreateSchool).not.toHaveBeenCalled();
+  });
+
+  it("exibe mensagem da API quando cadastro retorna 409", async () => {
+    mockedUseAuth.mockReturnValue(adminAuth);
+    mockedCreateSchool.mockRejectedValueOnce(
+      new ApiError(409, "Já existe uma escola com este nome no município.", null),
+    );
+
+    renderPage(<SchoolNewPage />);
+
+    fireEvent.change(screen.getByLabelText("Nome da escola"), { target: { value: "EMEF Centro" } });
+    fireEvent.click(screen.getByRole("button", { name: "Cadastrar escola" }));
+
+    expect(await screen.findByText("Já existe uma escola com este nome no município.")).toBeInTheDocument();
+    expect(navigate).not.toHaveBeenCalled();
   });
 
   it("gestor vê município vinculado e não envia IBGE no corpo", async () => {

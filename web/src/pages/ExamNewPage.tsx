@@ -6,6 +6,7 @@ import { listClassrooms, type Classroom } from "@/api/classes";
 import { createExam, fetchExam, updateExam, type ExamDetail, type ExamTypeApi } from "@/api/exams";
 import { listQuestions, listQuestionDescriptors, type QuestionListItem } from "@/api/questions";
 import { listSchools } from "@/api/schools";
+import { schoolDisplayName } from "@/schemas/school";
 import type { School } from "@/schemas/school";
 import { ModalFormPanel, ModalFormShell } from "@/components/ModalFormShell";
 import { SelectField, type SelectFieldOption } from "@/components/SelectField";
@@ -124,7 +125,7 @@ function ExamMetadataFields({
             label="Escola"
             value={schoolValue}
             onValueChange={onSchoolPickChange}
-            options={schools.map((s) => ({ value: s._id, label: s.name }))}
+            options={schools.map((s) => ({ value: s._id, label: schoolDisplayName(s) }))}
             emptyOption={{ label: "Selecione…" }}
             className="field--span-2"
             required

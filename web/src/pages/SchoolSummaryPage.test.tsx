@@ -76,7 +76,7 @@ describe("SchoolSummaryPage", () => {
   it("admin com escola selecionada exibe resumo das turmas", async () => {
     mockedUseAuth.mockReturnValue(adminAuth);
     mockedListSchools.mockResolvedValueOnce([
-      { _id: "507f1f77bcf86cd799439011", name: "EMEF Centro" },
+      { _id: "507f1f77bcf86cd799439011", name: "EMEF Centro", normalizedName: "EMEF CENTRO" },
     ]);
     mockedFetchSchoolSummary.mockResolvedValueOnce({
       schoolId: "507f1f77bcf86cd799439011",

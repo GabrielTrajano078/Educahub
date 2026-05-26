@@ -46,10 +46,10 @@ describe("createSchoolSchema", () => {
     expect(r.error.issues.some((i) => i.path[0] === "city" && i.code === "too_small")).toBe(true);
   });
 
-  it("rejeita municipalityCode curto com too_small", () => {
+  it("rejeita municipalityCode com tamanho IBGE invalido", () => {
     const r = createSchoolSchema.safeParse({
       name: "EMEF Centro",
-      municipalityCode: "1",
+      municipalityCode: "12345",
     });
 
     expect(r.success).toBe(false);
@@ -57,7 +57,35 @@ describe("createSchoolSchema", () => {
       throw new Error("esperado falha de parse");
     }
     expect(r.error).toBeInstanceOf(ZodError);
-    expect(r.error.issues.some((i) => i.path[0] === "municipalityCode" && i.code === "too_small")).toBe(true);
+    expect(r.error.issues.some((i) => i.path[0] === "municipalityCode" && i.code === "invalid_format")).toBe(
+      true,
+    );
+  });
+
+  it("rejeita campos extras no body (strict)", () => {
+    const r = createSchoolSchema.safeParse({
+      name: "EMEF Centro",
+      extraField: true,
+    });
+
+    expect(r.success).toBe(false);
+    if (r.success) {
+      throw new Error("esperado falha de parse");
+    }
+    expect(r.error.issues.some((i) => i.code === "unrecognized_keys")).toBe(true);
+  });
+
+  it("rejeita normalizedName no body (strict)", () => {
+    const r = createSchoolSchema.safeParse({
+      name: "EMEF Centro",
+      normalizedName: "EMEF CENTRO",
+    });
+
+    expect(r.success).toBe(false);
+    if (r.success) {
+      throw new Error("esperado falha de parse");
+    }
+    expect(r.error.issues.some((i) => i.code === "unrecognized_keys")).toBe(true);
   });
 });
 

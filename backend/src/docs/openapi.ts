@@ -139,7 +139,30 @@ export const openApiDocument = {
         properties: {
           name: { type: "string", example: "EMEF Jose de Alencar" },
           city: { type: "string", example: "Fortaleza" },
+          municipalityCode: {
+            type: "string",
+            pattern: String.raw`^\d{7}$`,
+            example: "2304400",
+            description: "Codigo IBGE do municipio (7 digitos), quando informado.",
+          },
+        },
+        additionalProperties: false,
+      },
+      School: {
+        type: "object",
+        required: ["_id", "name", "normalizedName"],
+        properties: {
+          _id: objectId,
+          name: { type: "string", example: "EMEF José de Alencar" },
+          normalizedName: {
+            type: "string",
+            example: "EMEF JOSE DE ALENCAR",
+            description: "Nome canônico para exibição e unicidade por município (derivado no servidor).",
+          },
+          city: { type: "string", example: "Fortaleza" },
           municipalityCode: { type: "string", example: "2304400" },
+          createdAt: { type: "string", format: "date-time" },
+          updatedAt: { type: "string", format: "date-time" },
         },
       },
       ClassroomRequest: {
@@ -465,6 +488,14 @@ export const openApiDocument = {
         responses: {
           200: {
             description: "Lista de escolas",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "array",
+                  items: { $ref: "#/components/schemas/School" },
+                },
+              },
+            },
           },
           403: errorResponse,
         },
@@ -490,11 +521,50 @@ export const openApiDocument = {
               },
             },
           },
+          400: errorResponse,
           403: errorResponse,
         },
       },
     },
     "/api/schools/{id}": {
+      get: {
+        tags: ["Schools"],
+        summary: "Detalhe da escola",
+        security: [{ bearerAuth: [] }],
+        parameters: [idPathParameter],
+        responses: {
+          200: {
+            description: "Escola",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/School" },
+              },
+            },
+          },
+          403: errorResponse,
+          404: errorResponse,
+        },
+      },
+      patch: {
+        tags: ["Schools"],
+        summary: "Atualiza escola",
+        security: [{ bearerAuth: [] }],
+        parameters: [idPathParameter],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/SchoolRequest" },
+            },
+          },
+        },
+        responses: {
+          204: { description: "Escola atualizada" },
+          400: errorResponse,
+          403: errorResponse,
+          404: errorResponse,
+        },
+      },
       delete: deleteByIdOperation("Schools", "Remove escola (sem turmas vinculadas)"),
     },
     "/api/classes": {
