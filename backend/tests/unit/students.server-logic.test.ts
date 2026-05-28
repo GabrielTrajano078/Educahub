@@ -1,6 +1,10 @@
 import { Types } from "mongoose";
 import { ClassroomModel } from "../../src/modules/classes/classroom.model";
-import { classroomIdsForGrade, isDuplicateKeyError } from "../../src/modules/students/students.server-logic";
+import {
+  classroomIdsForGrade,
+  isDuplicateKeyError,
+  studentDuplicateKeyMessage,
+} from "../../src/modules/students/students.server-logic";
 
 jest.mock("../../src/modules/classes/classroom.model", () => ({
   ClassroomModel: {
@@ -33,6 +37,23 @@ describe("isDuplicateKeyError", () => {
     ["code 11000", { code: 11000 }, true],
   ])("%s", (_label, input, expected) => {
     expect(isDuplicateKeyError(input)).toBe(expected);
+  });
+});
+
+describe("studentDuplicateKeyMessage", () => {
+  it("retorna mensagem de matricula para indice registrationCode", () => {
+    expect(studentDuplicateKeyMessage({ code: 11000, keyPattern: { registrationCode: 1 } })).toBe(
+      "Ja existe aluno com este codigo de matricula.",
+    );
+  });
+
+  it("retorna mensagem de nome na turma para indice composto", () => {
+    expect(
+      studentDuplicateKeyMessage({
+        code: 11000,
+        keyPattern: { classroomId: 1, normalizedFullName: 1 },
+      }),
+    ).toBe("Ja existe aluno com este nome na turma informada.");
   });
 });
 

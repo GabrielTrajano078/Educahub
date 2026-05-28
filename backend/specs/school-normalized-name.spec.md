@@ -337,7 +337,7 @@ Comportamento:
 
 ## 11. Fora de escopo
 
-- Normalização de **turma** (QODE-42) e **aluno** (QODE-41)
+- Normalização de **turma** (QODE-42) — ver [`student-normalized-full-name.spec.md`](./student-normalized-full-name.spec.md) para alunos (QODE-41)
 - Alterar `schoolSnapshot` em cartões-resposta já emitidos
 - Mudanças em RBAC além do necessário para manter escopo gestor/município existente
 

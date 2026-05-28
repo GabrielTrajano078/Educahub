@@ -16,6 +16,8 @@ jest.mock("../../src/modules/students/student.model", () => ({
     find: jest.fn(),
     create: jest.fn(),
     findById: jest.fn(),
+    findOne: jest.fn(),
+    updateOne: jest.fn(),
     deleteOne: jest.fn(),
   },
 }));
@@ -75,10 +77,11 @@ function bearerProfessor(payload: {
   return `Bearer ${token}`;
 }
 
-function mockStudentFindReturns(rows: unknown[]): void {
+function mockStudentFindReturns(rows: unknown[]): jest.Mock {
   const lean = jest.fn<() => Promise<unknown[]>>().mockResolvedValue(rows);
   const sort = jest.fn().mockReturnValue({ lean });
   (StudentModel.find as jest.Mock).mockReturnValue({ sort });
+  return sort;
 }
 
 function mockClassroomById(schoolId: string): void {
@@ -206,10 +209,10 @@ describe("POST /api/students", () => {
     expect(res.body).toEqual({ message: "A turma nao pertence a escola informada." });
   });
 
-  it("409 em violacao de unicidade (codigo 11000)", async () => {
+  it("409 em violacao de unicidade de matricula (codigo 11000)", async () => {
     jest.mocked(access.canAccessSchool).mockResolvedValue(true);
     mockClassroomById(validOid);
-    asAsyncMock(StudentModel.create).mockRejectedValue({ code: 11000 });
+    asAsyncMock(StudentModel.create).mockRejectedValue({ code: 11000, keyPattern: { registrationCode: 1 } });
 
     const res = await request(app)
       .post("/api/students")
@@ -222,7 +225,29 @@ describe("POST /api/students", () => {
       });
 
     expect(res.status).toBe(409);
-    expect(res.body).toEqual({ message: "Já existe aluno com este código de matrícula." });
+    expect(res.body).toEqual({ message: "Ja existe aluno com este codigo de matricula." });
+  });
+
+  it("409 em violacao de nome na turma (codigo 11000)", async () => {
+    jest.mocked(access.canAccessSchool).mockResolvedValue(true);
+    mockClassroomById(validOid);
+    asAsyncMock(StudentModel.create).mockRejectedValue({
+      code: 11000,
+      keyPattern: { classroomId: 1, normalizedFullName: 1 },
+    });
+
+    const res = await request(app)
+      .post("/api/students")
+      .set("Authorization", bearerAdmin())
+      .send({
+        schoolId: validOid,
+        classroomId: validOid,
+        fullName: "Ana Clara Sousa",
+        registrationCode: "REG-OTHER",
+      });
+
+    expect(res.status).toBe(409);
+    expect(res.body).toEqual({ message: "Ja existe aluno com este nome na turma informada." });
   });
 
   it("500 quando create falha com erro que nao e duplicata", async () => {
@@ -256,12 +281,19 @@ describe("POST /api/students", () => {
       .send({
         schoolId: validOid,
         classroomId: validOid,
-        fullName: "Nome Valido",
+        fullName: "Ana Clara Sousa",
         registrationCode: "REG-NEW",
       });
 
     expect(res.status).toBe(201);
     expect(res.body).toEqual({ id: String(createdId) });
+    expect(StudentModel.create).toHaveBeenCalledWith({
+      schoolId: validOid,
+      classroomId: validOid,
+      fullName: "Ana Clara Sousa",
+      normalizedFullName: "ANA CLARA SOUSA",
+      registrationCode: "REG-NEW",
+    });
   });
 });
 
@@ -273,10 +305,11 @@ describe("GET /api/students", () => {
   });
 
   it("200 com lista vazia para admin", async () => {
-    mockStudentFindReturns([]);
+    const sort = mockStudentFindReturns([]);
     const res = await request(app).get("/api/students").set("Authorization", bearerAdmin());
     expect(res.status).toBe(200);
     expect(res.body).toEqual([]);
+    expect(sort).toHaveBeenCalledWith({ normalizedFullName: 1 });
   });
 
   it("403 professor sem escola vinculada", async () => {

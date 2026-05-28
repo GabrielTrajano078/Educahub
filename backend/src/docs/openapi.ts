@@ -184,6 +184,24 @@ export const openApiDocument = {
           registrationCode: { type: "string", example: "ALU-0001" },
         },
       },
+      Student: {
+        type: "object",
+        required: ["_id", "schoolId", "classroomId", "fullName", "normalizedFullName", "registrationCode"],
+        properties: {
+          _id: objectId,
+          schoolId: objectId,
+          classroomId: objectId,
+          fullName: { type: "string", example: "Ana Clara Sousa" },
+          normalizedFullName: {
+            type: "string",
+            example: "ANA CLARA SOUSA",
+            description: "Nome canônico para exibição e unicidade por turma (derivado no servidor).",
+          },
+          registrationCode: { type: "string", example: "ALU-0001" },
+          createdAt: { type: "string", format: "date-time" },
+          updatedAt: { type: "string", format: "date-time" },
+        },
+      },
       QuestionRequest: {
         type: "object",
         required: ["discipline", "grade", "descriptor", "prompt", "optionA", "optionB", "optionC", "optionD", "answer"],
@@ -621,7 +639,17 @@ export const openApiDocument = {
           { name: "fullNameContains", in: "query", schema: { type: "string", maxLength: 200 } },
         ],
         responses: {
-          200: { description: "Lista de alunos" },
+          200: {
+            description: "Lista de alunos",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "array",
+                  items: { $ref: "#/components/schemas/Student" },
+                },
+              },
+            },
+          },
         },
       },
       post: {

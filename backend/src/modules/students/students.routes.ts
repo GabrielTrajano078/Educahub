@@ -1,6 +1,7 @@
 import { Types } from "mongoose";
 import { Router } from "express";
 import { canAccessClassroom, canAccessSchool, canAccessStudent } from "../../lib/access";
+import { normalizeStudentFullName } from "../../lib/normalize-student-full-name";
 import { requireAuth, requireRole } from "../../middlewares/auth";
 import { ClassroomModel } from "../classes/classroom.model";
 import { AnswerSheetModel } from "../results/answer-sheet.model";
@@ -9,7 +10,7 @@ import { ResultModel } from "../results/result.model";
 import { StudentModel } from "./student.model";
 import { computeListStudentsComputation } from "./students-list-scope";
 import { createStudentSchema, listStudentsSchema, updateStudentSchema } from "./students.schemas";
-import { isDuplicateKeyError } from "./students.server-logic";
+import { isDuplicateKeyError, studentDuplicateKeyMessage } from "./students.server-logic";
 
 export const studentsRouter = Router();
 
@@ -28,7 +29,7 @@ studentsRouter.get("/", requireAuth, async (req, res, next) => {
       return;
     }
 
-    const students = await StudentModel.find(computed.query).sort({ fullName: 1 }).lean();
+    const students = await StudentModel.find(computed.query).sort({ normalizedFullName: 1 }).lean();
     res.json(students);
   } catch (error) {
     next(error);
@@ -67,11 +68,17 @@ studentsRouter.post(
         return;
       }
 
-      const student = await StudentModel.create(data);
+      const student = await StudentModel.create({
+        schoolId: data.schoolId,
+        classroomId: data.classroomId,
+        fullName: data.fullName,
+        normalizedFullName: normalizeStudentFullName(data.fullName),
+        registrationCode: data.registrationCode,
+      });
       res.status(201).json({ id: String(student._id) });
     } catch (error) {
       if (isDuplicateKeyError(error)) {
-        res.status(409).json({ message: "Já existe aluno com este código de matrícula." });
+        res.status(409).json({ message: studentDuplicateKeyMessage(error) });
         return;
       }
       next(error);
@@ -144,21 +151,21 @@ studentsRouter.patch(
         }
       }
 
-      await StudentModel.updateOne(
-        { _id: studentId },
-        {
-          $set: {
-            ...(body.fullName !== undefined ? { fullName: body.fullName } : {}),
-            ...(body.registrationCode !== undefined ? { registrationCode: body.registrationCode } : {}),
-            ...(body.classroomId !== undefined ? { classroomId, schoolId } : {}),
-          },
-        },
-      );
+      const $set: Record<string, unknown> = {
+        ...(body.registrationCode !== undefined ? { registrationCode: body.registrationCode } : {}),
+        ...(body.classroomId !== undefined ? { classroomId, schoolId } : {}),
+      };
+      if (body.fullName !== undefined) {
+        $set.fullName = body.fullName;
+        $set.normalizedFullName = normalizeStudentFullName(body.fullName);
+      }
+
+      await StudentModel.updateOne({ _id: studentId }, { $set });
 
       res.status(204).send();
     } catch (error) {
       if (isDuplicateKeyError(error)) {
-        res.status(409).json({ message: "Ja existe aluno com este codigo de matricula." });
+        res.status(409).json({ message: studentDuplicateKeyMessage(error) });
         return;
       }
       next(error);

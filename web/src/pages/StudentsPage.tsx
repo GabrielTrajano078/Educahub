@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/useAuth";
 import { listClassrooms } from "@/api/classes";
-import { createStudent, deleteStudent, listStudents } from "@/api/students";
+import { createStudent, deleteStudent, listStudents, studentDisplayName } from "@/api/students";
 import { listSchools } from "@/api/schools";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -333,7 +333,7 @@ export function StudentsPage() {
               <tbody>
                 {studentsQ.data.map((s) => (
                   <tr key={s._id}>
-                    <td>{s.fullName}</td>
+                    <td>{studentDisplayName(s)}</td>
                     {showTurmaColumn ? (
                       <td className="muted small">{classroomLabelById.get(s.classroomId) ?? "—"}</td>
                     ) : null}
@@ -344,7 +344,7 @@ export function StudentsPage() {
                           type="button"
                           className="ghost btn-compact"
                           onClick={() => openStudentView(s._id)}
-                          aria-label={`Ver ${s.fullName}`}
+                          aria-label={`Ver ${studentDisplayName(s)}`}
                           title="Ver detalhes"
                         >
                           <TableActionIcon name="open" />
@@ -353,7 +353,7 @@ export function StudentsPage() {
                           type="button"
                           className="ghost btn-compact"
                           onClick={() => openStudentEdit(s._id)}
-                          aria-label={`Editar ${s.fullName}`}
+                          aria-label={`Editar ${studentDisplayName(s)}`}
                           title="Editar"
                         >
                           <TableActionIcon name="edit" />
@@ -362,12 +362,12 @@ export function StudentsPage() {
                           type="button"
                           className="btn-danger-text btn-compact"
                           disabled={deleteM.isPending}
-                          aria-label={`Excluir ${s.fullName}`}
+                          aria-label={`Excluir ${studentDisplayName(s)}`}
                           title="Excluir"
                           onClick={async () => {
                             const ok = await confirm({
                               title: "Excluir aluno",
-                              description: `Excluir "${s.fullName}"? Esta ação não pode ser desfeita (inclui cartões e resultados vinculados).`,
+                              description: `Excluir "${studentDisplayName(s)}"? Esta ação não pode ser desfeita (inclui cartões e resultados vinculados).`,
                               variant: "danger",
                               confirmLabel: "Excluir",
                               cancelLabel: "Cancelar",
