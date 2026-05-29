@@ -1,6 +1,10 @@
 import { describe, expect, it } from "@jest/globals";
 import { ZodError } from "zod";
-import { createStudentSchema, listStudentsSchema } from "../../src/modules/students/students.schemas";
+import {
+  createStudentSchema,
+  listStudentsSchema,
+  updateStudentSchema,
+} from "../../src/modules/students/students.schemas";
 
 const validOid = "507f1f77bcf86cd799439011";
 
@@ -52,6 +56,22 @@ describe("createStudentSchema", () => {
     expect(nameIssues.every((i) => i.code === "too_small")).toBe(true);
   });
 
+  it("rejeita normalizedFullName no body (strict)", () => {
+    const r = createStudentSchema.safeParse({
+      schoolId: validOid,
+      classroomId: validOid,
+      fullName: "Ana Silva",
+      registrationCode: "MAT-001",
+      normalizedFullName: "ANA SILVA",
+    });
+    expect(r.success).toBe(false);
+    if (r.success) {
+      throw new Error("esperado falha de parse");
+    }
+    expect(r.error).toBeInstanceOf(ZodError);
+    expect(r.error.issues.some((i) => i.code === "unrecognized_keys")).toBe(true);
+  });
+
   it("rejeita matricula curta com too_small em registrationCode", () => {
     const r = createStudentSchema.safeParse({
       schoolId: validOid,
@@ -67,6 +87,20 @@ describe("createStudentSchema", () => {
     const regIssues = r.error.issues.filter((i) => i.path[0] === "registrationCode");
     expect(regIssues.length).toBeGreaterThan(0);
     expect(regIssues.every((i) => i.code === "too_small")).toBe(true);
+  });
+});
+
+describe("updateStudentSchema", () => {
+  it("rejeita normalizedFullName no body (strict)", () => {
+    const r = updateStudentSchema.safeParse({
+      fullName: "Ana Silva",
+      normalizedFullName: "ANA SILVA",
+    });
+    expect(r.success).toBe(false);
+    if (r.success) {
+      throw new Error("esperado falha de parse");
+    }
+    expect(r.error.issues.some((i) => i.code === "unrecognized_keys")).toBe(true);
   });
 });
 

@@ -1,6 +1,6 @@
 import { type ComponentProps, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { type Student, type UpdateStudentBody, updateStudent } from "@/api/students";
+import { type Student, type UpdateStudentBody, studentDisplayName, updateStudent } from "@/api/students";
 import { ModalFormPanel, ModalFormShell } from "@/components/ModalFormShell";
 import { FeedbackModal, type FeedbackModalState } from "@/components/ui/FeedbackModal";
 import { ApiError } from "@/lib/api-client";
@@ -24,7 +24,7 @@ export function StudentViewModal({ open, student, turmaLabel, onClose }: Student
         <div className="form-grid question-new-form" style={{ marginTop: 0 }}>
           <div className="field" style={{ gridColumn: "1 / -1" }}>
             <span className="field-label">Nome completo</span>
-            <p style={{ margin: "0.35rem 0 0" }}>{student.fullName}</p>
+            <p style={{ margin: "0.35rem 0 0" }}>{studentDisplayName(student)}</p>
           </div>
           <div className="field" style={{ gridColumn: "1 / -1" }}>
             <span className="field-label">Matrícula</span>

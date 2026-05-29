@@ -13,6 +13,7 @@ import { AnswerSheetModel } from "../modules/results/answer-sheet.model";
 import { ResultModel } from "../modules/results/result.model";
 import { normalizeSchoolName } from "../lib/normalize-school-name";
 import { SchoolModel } from "../modules/schools/school.model";
+import { normalizeStudentFullName } from "../lib/normalize-student-full-name";
 import { StudentModel } from "../modules/students/student.model";
 
 type SeedQuestion = {
@@ -205,6 +206,7 @@ async function main() {
             schoolId: school._id,
             classroomId: classroom._id,
             fullName: student.fullName,
+            normalizedFullName: normalizeStudentFullName(student.fullName),
             registrationCode: student.registrationCode,
           },
         },

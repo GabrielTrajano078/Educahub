@@ -2,6 +2,7 @@ import { Types } from "mongoose";
 import type { z } from "zod";
 import type { AuthUser } from "../../types/auth";
 import { escapeRegex } from "../../lib/escape-regex";
+import { normalizeStudentFullName } from "../../lib/normalize-student-full-name";
 import { listStudentsSchema } from "./students.schemas";
 import { classroomIdsForGrade } from "./students.server-logic";
 
@@ -90,7 +91,10 @@ export async function computeListStudentsComputation(
   const query: Record<string, unknown> = {};
   const nameTrim = filters.fullNameContains?.trim();
   if (nameTrim) {
-    query.fullName = { $regex: escapeRegex(nameTrim), $options: "i" };
+    query.normalizedFullName = {
+      $regex: escapeRegex(normalizeStudentFullName(nameTrim)),
+      $options: "i",
+    };
   }
   if (filters.classroomId) {
     query.classroomId = new Types.ObjectId(filters.classroomId);

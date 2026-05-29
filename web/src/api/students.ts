@@ -1,12 +1,11 @@
 import { apiFetch } from "@/lib/api-client";
+import { type Student, studentSchema } from "@/schemas/student";
+import { z } from "zod";
 
-export type Student = {
-  _id: string;
-  schoolId: string;
-  classroomId: string;
-  fullName: string;
-  registrationCode: string;
-};
+export type { Student };
+export { studentDisplayName } from "@/schemas/student";
+
+const studentListSchema = z.array(studentSchema);
 
 export async function listStudents(params?: {
   schoolId?: string;
@@ -20,7 +19,8 @@ export async function listStudents(params?: {
   if (params?.grade) sp.set("grade", params.grade);
   if (params?.fullNameContains?.trim()) sp.set("fullNameContains", params.fullNameContains.trim());
   const q = sp.toString();
-  return apiFetch<Student[]>(`/api/students${q ? `?${q}` : ""}`);
+  const raw = await apiFetch<unknown>(`/api/students${q ? `?${q}` : ""}`);
+  return studentListSchema.parse(raw);
 }
 
 export type CreateStudentBody = {

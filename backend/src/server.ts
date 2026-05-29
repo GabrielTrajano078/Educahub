@@ -5,20 +5,33 @@ import {
   migrateSchoolNormalizedName,
   SchoolNormalizedNameCollisionError,
 } from "./lib/migrations/migrate-school-normalized-name";
+import {
+  migrateStudentNormalizedFullName,
+  StudentNormalizedFullNameCollisionError,
+} from "./lib/migrations/migrate-student-normalized-full-name";
 
 async function runStartupMigrations(): Promise<void> {
   if (env.NODE_ENV === "test") {
     return;
   }
 
-  const result = await migrateSchoolNormalizedName();
-  if (result.skipped) {
+  const schoolResult = await migrateSchoolNormalizedName();
+  if (!schoolResult.skipped) {
+    if (schoolResult.updated > 0) {
+      console.log(`[migrate] Escolas (${schoolResult.migrationId}): ${schoolResult.updated} documento(s) atualizado(s).`);
+    } else {
+      console.log(`[migrate] Escolas (${schoolResult.migrationId}): migração aplicada.`);
+    }
+  }
+
+  const studentResult = await migrateStudentNormalizedFullName();
+  if (studentResult.skipped) {
     return;
   }
-  if (result.updated > 0) {
-    console.log(`[migrate] Escolas (${result.migrationId}): ${result.updated} documento(s) atualizado(s).`);
+  if (studentResult.updated > 0) {
+    console.log(`[migrate] Alunos (${studentResult.migrationId}): ${studentResult.updated} documento(s) atualizado(s).`);
   } else {
-    console.log(`[migrate] Escolas (${result.migrationId}): migração aplicada.`);
+    console.log(`[migrate] Alunos (${studentResult.migrationId}): migração aplicada.`);
   }
 }
 
@@ -30,6 +43,11 @@ async function bootstrap() {
   } catch (error) {
     if (error instanceof SchoolNormalizedNameCollisionError) {
       console.error("[migrate] Colisões em escolas (municipalityCode + normalizedName):");
+      console.error(JSON.stringify(error.collisions, null, 2));
+      process.exit(2);
+    }
+    if (error instanceof StudentNormalizedFullNameCollisionError) {
+      console.error("[migrate] Colisões em alunos (classroomId + normalizedFullName):");
       console.error(JSON.stringify(error.collisions, null, 2));
       process.exit(2);
     }

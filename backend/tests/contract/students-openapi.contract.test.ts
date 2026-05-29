@@ -7,6 +7,7 @@ import {
   readOperationParameterNames,
   readOperationSecurity,
   readPost201ResponseSchema,
+  readResponseSchema,
   zodRequiredKeys,
   zodShapeKeys,
 } from "./openapi-contract-helpers";
@@ -31,5 +32,33 @@ describe("contrato OpenAPI — alunos", () => {
 
   it("POST 201 referencia IdResponse", () => {
     expect(readPost201ResponseSchema("/api/students")).toEqual({ $ref: "#/components/schemas/IdResponse" });
+  });
+
+  it("Student expõe fullName e normalizedFullName obrigatórios na resposta", () => {
+    expect(readComponentSchemaRequired("Student")).toEqual([
+      "_id",
+      "classroomId",
+      "fullName",
+      "normalizedFullName",
+      "registrationCode",
+      "schoolId",
+    ]);
+    expect(readComponentSchemaPropertyKeys("Student")).toEqual([
+      "_id",
+      "classroomId",
+      "createdAt",
+      "fullName",
+      "normalizedFullName",
+      "registrationCode",
+      "schoolId",
+      "updatedAt",
+    ]);
+  });
+
+  it("GET /api/students 200 retorna array de Student", () => {
+    expect(readResponseSchema("/api/students", "get", "200")).toEqual({
+      type: "array",
+      items: { $ref: "#/components/schemas/Student" },
+    });
   });
 });
