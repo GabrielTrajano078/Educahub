@@ -3,6 +3,7 @@ import mongoose, { Types } from "mongoose";
 import { connectDatabase } from "../config/db";
 import { env } from "../config/env";
 import { UserModel } from "../modules/auth/user.model";
+import { normalizeClassroomName } from "../lib/normalize-classroom-name";
 import { ClassroomModel } from "../modules/classes/classroom.model";
 import { generateUniqueExamCode } from "../modules/exams/exam-code";
 import { ExamModel } from "../modules/exams/exam.model";
@@ -174,11 +175,12 @@ async function main() {
   });
 
   const classroom = await ClassroomModel.findOneAndUpdate(
-    { schoolId: school._id, name: "5A Manha" },
+    { schoolId: school._id, normalizedName: normalizeClassroomName("5A Manha") },
     {
       $set: {
         schoolId: school._id,
         name: "5A Manha",
+        normalizedName: normalizeClassroomName("5A Manha"),
         grade: "5",
       },
     },

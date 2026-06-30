@@ -1,11 +1,13 @@
 import { z } from "zod";
 import { gradeSchema, objectIdSchema } from "../common/schemas";
 
-export const createClassroomSchema = z.object({
-  schoolId: objectIdSchema,
-  name: z.string().trim().min(1),
-  grade: gradeSchema,
-});
+export const createClassroomSchema = z
+  .object({
+    schoolId: objectIdSchema,
+    name: z.string().trim().min(1),
+    grade: gradeSchema,
+  })
+  .strict();
 
 export const listClassroomsSchema = z.object({
   schoolId: objectIdSchema.optional(),
@@ -23,6 +25,7 @@ export const updateClassroomSchema = z
     name: z.string().trim().min(1).optional(),
     grade: gradeSchema.optional(),
   })
+  .strict()
   .refine((data) => Object.keys(data).length > 0, {
     message: "Nenhum campo para atualizar.",
   });

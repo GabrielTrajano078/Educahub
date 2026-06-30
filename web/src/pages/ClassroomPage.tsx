@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { listClassrooms } from "@/api/classes";
+import { classroomOptionLabel, listClassrooms } from "@/api/classes";
 import { listExams } from "@/api/exams";
 import { listSchools } from "@/api/schools";
 import { schoolDisplayName } from "@/schemas/school";
@@ -78,7 +78,7 @@ export function ClassroomPage() {
         </p>
         <h2>
           {classroomMeta
-            ? `${classroomMeta.classroom.name} (${classroomMeta.classroom.grade}º)${
+            ? `${classroomOptionLabel(classroomMeta.classroom)}${
                 classroomMeta.schoolName ? ` · ${classroomMeta.schoolName}` : ""
               }`
             : classesQ.isLoading

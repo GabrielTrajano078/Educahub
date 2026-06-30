@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ComponentProps, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/useAuth";
-import { listClassrooms } from "@/api/classes";
+import { listClassrooms, classroomOptionLabel } from "@/api/classes";
 import { createStudent } from "@/api/students";
 import { ModalFormPanel, ModalFormShell } from "@/components/ModalFormShell";
 import { FeedbackModal, type FeedbackModalState } from "@/components/ui/FeedbackModal";
@@ -91,7 +91,7 @@ function StudentNewModalMounted({ open, onClose, initialClassroomId, user }: Stu
 
   const classroomOptions = (classesQ.data ?? []).map((c) => ({
     value: c._id,
-    label: `${c.name} (${c.grade}º)`,
+    label: classroomOptionLabel(c),
   }));
 
   return (

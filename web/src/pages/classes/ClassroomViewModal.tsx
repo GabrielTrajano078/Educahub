@@ -1,4 +1,4 @@
-import type { Classroom } from "@/api/classes";
+import { type Classroom, classroomDisplayName } from "@/api/classes";
 import { ModalFormPanel, ModalFormShell } from "@/components/ModalFormShell";
 
 type ClassroomViewModalProps = Readonly<{
@@ -19,7 +19,7 @@ export function ClassroomViewModal({ open, classroom, schoolName, onClose }: Cla
         <div className="form-grid question-new-form" style={{ marginTop: 0 }}>
           <div className="field" style={{ gridColumn: "1 / -1" }}>
             <span className="field-label">Nome da turma</span>
-            <p style={{ margin: "0.35rem 0 0" }}>{classroom.name}</p>
+            <p style={{ margin: "0.35rem 0 0" }}>{classroomDisplayName(classroom)}</p>
           </div>
           <div className="field" style={{ gridColumn: "1 / -1" }}>
             <span className="field-label">Ano</span>

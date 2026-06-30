@@ -130,7 +130,7 @@ describe("POST /api/classes", () => {
       });
 
     expect(res.status).toBe(409);
-    expect(res.body).toEqual({ message: "Já existe turma com este nome para a escola informada." });
+    expect(res.body).toEqual({ message: "Ja existe turma com este nome para a escola informada." });
   });
 
   it("500 quando create falha com codigo diferente de duplicidade", async () => {
@@ -230,7 +230,7 @@ describe("POST /api/classes", () => {
       .set("Authorization", bearer("admin"))
       .send({
         schoolId: validOid,
-        name: "5º Ano A",
+        name: "5A Manha",
         grade: "5",
       });
 
@@ -238,7 +238,8 @@ describe("POST /api/classes", () => {
     expect(res.body).toEqual({ id: String(createdId) });
     expect(ClassroomModel.create).toHaveBeenCalledWith({
       schoolId: validOid,
-      name: "5º Ano A",
+      name: "5A Manha",
+      normalizedName: "5A MANHA",
       grade: "5",
     });
   });
@@ -262,7 +263,7 @@ describe("GET /api/classes", () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual([]);
     expect(ClassroomModel.find).toHaveBeenCalledWith({});
-    expect(sort).toHaveBeenCalledWith({ createdAt: -1 });
+    expect(sort).toHaveBeenCalledWith({ normalizedName: 1 });
   });
 
   it("200 admin aplica filtros e escapa nameContains", async () => {
@@ -277,7 +278,7 @@ describe("GET /api/classes", () => {
     expect(ClassroomModel.find).toHaveBeenCalledWith({
       schoolId: validOid,
       grade: "9",
-      name: { $regex: String.raw`5\.\*A`, $options: "i" },
+      normalizedName: { $regex: String.raw`5\.\*A`, $options: "i" },
     });
   });
 

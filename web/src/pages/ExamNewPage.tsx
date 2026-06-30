@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/useAuth";
-import { listClassrooms, type Classroom } from "@/api/classes";
+import { classroomOptionLabel, listClassrooms, type Classroom } from "@/api/classes";
 import { createExam, fetchExam, updateExam, type ExamDetail, type ExamTypeApi } from "@/api/exams";
 import { listQuestions, listQuestionDescriptors, type QuestionListItem } from "@/api/questions";
 import { listSchools } from "@/api/schools";
@@ -139,7 +139,7 @@ function ExamMetadataFields({
           label="Turma"
           value={classroomId}
           onValueChange={onClassroomIdChange}
-          options={classrooms.map((c) => ({ value: c._id, label: `${c.name} (${c.grade}º)` }))}
+          options={classrooms.map((c) => ({ value: c._id, label: classroomOptionLabel(c) }))}
           emptyOption={{ label: "Selecione…" }}
           className="field--span-2"
           required

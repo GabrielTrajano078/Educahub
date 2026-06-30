@@ -1,6 +1,6 @@
 import { describe, expect, it } from "@jest/globals";
 import { ZodError } from "zod";
-import { createClassroomSchema, listClassroomsSchema } from "../../src/modules/classes/classes.schemas";
+import { createClassroomSchema, listClassroomsSchema, updateClassroomSchema } from "../../src/modules/classes/classes.schemas";
 
 const validOid = "507f1f77bcf86cd799439011";
 
@@ -49,6 +49,20 @@ describe("createClassroomSchema", () => {
     expect(r.error.issues.some((i) => i.path[0] === "name" && i.code === "too_small")).toBe(true);
   });
 
+  it("rejeita normalizedName no body (strict)", () => {
+    const r = createClassroomSchema.safeParse({
+      schoolId: validOid,
+      name: "5A Manha",
+      grade: "5",
+      normalizedName: "5A MANHA",
+    });
+    expect(r.success).toBe(false);
+    if (r.success) {
+      throw new Error("esperado falha de parse");
+    }
+    expect(r.error.issues.some((i) => i.code === "unrecognized_keys")).toBe(true);
+  });
+
   it("rejeita ano fora da matriz", () => {
     const r = createClassroomSchema.safeParse({
       schoolId: validOid,
@@ -62,6 +76,20 @@ describe("createClassroomSchema", () => {
     }
     expect(r.error).toBeInstanceOf(ZodError);
     expect(r.error.issues.some((i) => i.path[0] === "grade")).toBe(true);
+  });
+});
+
+describe("updateClassroomSchema", () => {
+  it("rejeita normalizedName no body (strict)", () => {
+    const r = updateClassroomSchema.safeParse({
+      name: "5A Manha",
+      normalizedName: "5A MANHA",
+    });
+    expect(r.success).toBe(false);
+    if (r.success) {
+      throw new Error("esperado falha de parse");
+    }
+    expect(r.error.issues.some((i) => i.code === "unrecognized_keys")).toBe(true);
   });
 });
 

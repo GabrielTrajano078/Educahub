@@ -174,6 +174,23 @@ export const openApiDocument = {
           grade: { type: "string", enum: ["5", "9"], example: "5" },
         },
       },
+      Classroom: {
+        type: "object",
+        required: ["_id", "schoolId", "name", "normalizedName", "grade"],
+        properties: {
+          _id: objectId,
+          schoolId: objectId,
+          name: { type: "string", example: "5A Manha" },
+          normalizedName: {
+            type: "string",
+            example: "5A MANHA",
+            description: "Nome canônico para exibição e unicidade por escola (derivado no servidor).",
+          },
+          grade: { type: "string", enum: ["5", "9"], example: "5" },
+          createdAt: { type: "string", format: "date-time" },
+          updatedAt: { type: "string", format: "date-time" },
+        },
+      },
       StudentRequest: {
         type: "object",
         required: ["schoolId", "classroomId", "fullName", "registrationCode"],
@@ -596,7 +613,17 @@ export const openApiDocument = {
           { name: "nameContains", in: "query", schema: { type: "string", maxLength: 200 } },
         ],
         responses: {
-          200: { description: "Lista de turmas" },
+          200: {
+            description: "Lista de turmas",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "array",
+                  items: { $ref: "#/components/schemas/Classroom" },
+                },
+              },
+            },
+          },
         },
       },
       post: {

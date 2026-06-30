@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { listClassrooms } from "@/api/classes";
+import { listClassrooms, classroomOptionLabel } from "@/api/classes";
 import {
   fetchExam,
   generateAnswerSheets,
@@ -132,7 +132,7 @@ export function ExamDetailSections({ examId, breadcrumb, enabled = true }: ExamD
             <p className="small">
               Turma:{" "}
               <Link to={`/turma/${exam.classroomId}`}>
-                {classroomRow ? `${classroomRow.name} (${classroomRow.grade}º)` : "Abrir painel da turma"}
+                {classroomRow ? classroomOptionLabel(classroomRow) : "Abrir painel da turma"}
               </Link>
             </p>
             {msg ? <p className="success">{msg}</p> : null}

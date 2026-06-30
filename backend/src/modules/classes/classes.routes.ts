@@ -1,6 +1,7 @@
 import { Types } from "mongoose";
 import { Router } from "express";
 import { escapeRegex } from "../../lib/escape-regex";
+import { normalizeClassroomName } from "../../lib/normalize-classroom-name";
 import { canAccessSchool } from "../../lib/access";
 import { requireAuth, requireRole } from "../../middlewares/auth";
 import { ClassroomModel } from "./classroom.model";
@@ -22,7 +23,7 @@ classesRouter.get("/", requireAuth, async (req, res, next) => {
       ...(filters.grade ? { grade: filters.grade } : {}),
       ...(nameTrim
         ? {
-            name: { $regex: escapeRegex(nameTrim), $options: "i" },
+            normalizedName: { $regex: escapeRegex(normalizeClassroomName(nameTrim)), $options: "i" },
           }
         : {}),
     };
@@ -47,7 +48,7 @@ classesRouter.get("/", requireAuth, async (req, res, next) => {
       query.schoolId = req.user!.schoolId;
     }
 
-    const classes = await ClassroomModel.find(query).sort({ createdAt: -1 }).lean();
+    const classes = await ClassroomModel.find(query).sort({ normalizedName: 1 }).lean();
     res.json(classes);
   } catch (error) {
     next(error);
@@ -68,11 +69,16 @@ classesRouter.post(
         return;
       }
 
-      const classroom = await ClassroomModel.create(data);
+      const classroom = await ClassroomModel.create({
+        schoolId: data.schoolId,
+        name: data.name,
+        normalizedName: normalizeClassroomName(data.name),
+        grade: data.grade,
+      });
       res.status(201).json({ id: String(classroom._id) });
     } catch (error) {
       if (isDuplicateKeyError(error)) {
-        res.status(409).json({ message: "Já existe turma com este nome para a escola informada." });
+        res.status(409).json({ message: "Ja existe turma com este nome para a escola informada." });
         return;
       }
       next(error);
@@ -121,21 +127,21 @@ classesRouter.patch(
         return;
       }
 
-      await ClassroomModel.updateOne(
-        { _id: id },
-        {
-          $set: {
-            ...(data.schoolId !== undefined ? { schoolId: data.schoolId } : {}),
-            ...(data.name !== undefined ? { name: data.name } : {}),
-            ...(data.grade !== undefined ? { grade: data.grade } : {}),
-          },
-        },
-      );
+      const $set: Record<string, unknown> = {
+        ...(data.schoolId !== undefined ? { schoolId: data.schoolId } : {}),
+        ...(data.grade !== undefined ? { grade: data.grade } : {}),
+      };
+      if (data.name !== undefined) {
+        $set.name = data.name;
+        $set.normalizedName = normalizeClassroomName(data.name);
+      }
+
+      await ClassroomModel.updateOne({ _id: id }, { $set });
 
       res.status(204).send();
     } catch (error) {
       if (isDuplicateKeyError(error)) {
-        res.status(409).json({ message: "Já existe turma com este nome para a escola informada." });
+        res.status(409).json({ message: "Ja existe turma com este nome para a escola informada." });
         return;
       }
       next(error);

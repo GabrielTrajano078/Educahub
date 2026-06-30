@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import type { Classroom } from "@/api/classes";
+import { type Classroom, classroomDisplayName } from "@/api/classes";
 import { ApiError } from "@/lib/api-client";
 import { TableActionIcon } from "@/components/table/TableActionIcons";
 import { Button } from "@/components/ui/Button";
@@ -75,7 +75,7 @@ export function RegisteredClassesTable({
         <tbody>
           {classrooms.map((c) => (
             <tr key={c._id}>
-              <td>{c.name}</td>
+              <td>{classroomDisplayName(c)}</td>
               <td>{c.grade}º</td>
               <td className="small">
                 {schoolNameById.get(c.schoolId) ??
@@ -86,7 +86,7 @@ export function RegisteredClassesTable({
                   type="button"
                   className="ghost btn-compact"
                   onClick={() => onView(c._id)}
-                  aria-label={`Ver turma ${c.name}`}
+                  aria-label={`Ver turma ${classroomDisplayName(c)}`}
                   title="Ver detalhes"
                 >
                   <TableActionIcon name="open" />
@@ -96,7 +96,7 @@ export function RegisteredClassesTable({
                     type="button"
                     className="ghost btn-compact"
                     onClick={() => onEdit(c._id)}
-                    aria-label={`Editar turma ${c.name}`}
+                    aria-label={`Editar turma ${classroomDisplayName(c)}`}
                     title="Editar"
                   >
                     <TableActionIcon name="edit" />
@@ -106,8 +106,8 @@ export function RegisteredClassesTable({
                   <button
                     type="button"
                     className="btn-danger-text btn-compact"
-                    onClick={() => onDelete(c._id, c.name)}
-                    aria-label={`Excluir turma ${c.name}`}
+                    onClick={() => onDelete(c._id, classroomDisplayName(c))}
+                    aria-label={`Excluir turma ${classroomDisplayName(c)}`}
                     title="Excluir"
                     disabled={deletePendingId === c._id}
                   >

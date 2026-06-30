@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/useAuth";
-import { listClassrooms } from "@/api/classes";
+import { listClassrooms, classroomOptionLabel } from "@/api/classes";
 import { createStudent, deleteStudent, listStudents, studentDisplayName } from "@/api/students";
 import { listSchools } from "@/api/schools";
 import { Button } from "@/components/ui/Button";
@@ -76,7 +76,7 @@ export function StudentsPage() {
   const classroomLabelById = useMemo(() => {
     const m = new Map<string, string>();
     for (const c of classesQ.data ?? []) {
-      m.set(c._id, `${c.name} (${c.grade}º)`);
+      m.set(c._id, classroomOptionLabel(c));
     }
     return m;
   }, [classesQ.data]);
@@ -218,7 +218,7 @@ export function StudentsPage() {
 
   const classroomOptions = (classesQ.data ?? []).map((c) => ({
     value: c._id,
-    label: `${c.name} (${c.grade}º)`,
+    label: classroomOptionLabel(c),
   }));
 
   const importChooseDisabled = importBusy || !classroomId || !selectedClass;
