@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/useAuth";
-import { listClassrooms } from "@/api/classes";
+import { listClassrooms, classroomOptionLabel } from "@/api/classes";
 import { listExams } from "@/api/exams";
 import { listSchools } from "@/api/schools";
 import { schoolDisplayName } from "@/schemas/school";
@@ -142,7 +142,7 @@ export function SchoolSummaryPage() {
             <div>
               <h3 style={{ marginTop: 0 }}>
                 {modalClassroomMeta
-                  ? `${modalClassroomMeta.classroom.name} (${modalClassroomMeta.classroom.grade}º)${
+                  ? `${classroomOptionLabel(modalClassroomMeta.classroom)}${
                       modalClassroomMeta.schoolName ? ` · ${modalClassroomMeta.schoolName}` : ""
                     }`
                   : "Turma"}

@@ -17,6 +17,7 @@
     "seed": "tsx src/scripts/seed.ts",
     "migrate:schools": "tsx src/scripts/migrate-school-normalized-name.ts",
     "migrate:students": "tsx src/scripts/migrate-student-normalized-full-name.ts",
+    "migrate:classes": "tsx src/scripts/migrate-classroom-normalized-name.ts",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "db:reset": "docker compose down -v && docker compose up -d --wait",

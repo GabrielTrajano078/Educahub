@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/auth/useAuth";
-import { listClassrooms } from "@/api/classes";
+import { classroomOptionLabel, listClassrooms } from "@/api/classes";
 import { listExams } from "@/api/exams";
 import { listSchools } from "@/api/schools";
 import { schoolDisplayName } from "@/schemas/school";
@@ -116,7 +116,7 @@ export function DashboardHomePage() {
               {classesQuery.data.map((c) => (
                 <li key={c._id}>
                   <Link to={`/turma/${c._id}`}>
-                    {c.name} ({c.grade}º ano)
+                    {classroomOptionLabel(c)}
                   </Link>
                   {" · "}
                   <Link to={`/alunos?classroomId=${c._id}`}>Alunos</Link>

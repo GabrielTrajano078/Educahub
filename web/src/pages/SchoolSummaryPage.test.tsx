@@ -96,6 +96,7 @@ describe("SchoolSummaryPage", () => {
         _id: "507f1f77bcf86cd799439012",
         schoolId: "507f1f77bcf86cd799439011",
         name: "5º A",
+        normalizedName: "5 A",
         grade: "5",
       },
     ]);

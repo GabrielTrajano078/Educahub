@@ -1,11 +1,11 @@
 import { apiFetch } from "@/lib/api-client";
+import { type Classroom, classroomSchema } from "@/schemas/classroom";
+import { z } from "zod";
 
-export type Classroom = {
-  _id: string;
-  schoolId: string;
-  name: string;
-  grade: "5" | "9";
-};
+export type { Classroom };
+export { classroomDisplayName, classroomOptionLabel } from "@/schemas/classroom";
+
+const classroomListSchema = z.array(classroomSchema);
 
 export async function listClassrooms(params?: {
   schoolId?: string;
@@ -17,7 +17,8 @@ export async function listClassrooms(params?: {
   if (params?.grade) sp.set("grade", params.grade);
   if (params?.nameContains?.trim()) sp.set("nameContains", params.nameContains.trim());
   const q = sp.toString();
-  return apiFetch<Classroom[]>(`/api/classes${q ? `?${q}` : ""}`);
+  const raw = await apiFetch<unknown>(`/api/classes${q ? `?${q}` : ""}`);
+  return classroomListSchema.parse(raw);
 }
 
 export type CreateClassroomBody = {
@@ -33,7 +34,8 @@ export async function createClassroom(body: CreateClassroomBody): Promise<{ id: 
 export type UpdateClassroomBody = Partial<CreateClassroomBody>;
 
 export async function fetchClassroom(id: string): Promise<Classroom> {
-  return apiFetch(`/api/classes/${id}`);
+  const raw = await apiFetch<unknown>(`/api/classes/${id}`);
+  return classroomSchema.parse(raw);
 }
 
 export async function updateClassroom(id: string, body: UpdateClassroomBody): Promise<void> {
