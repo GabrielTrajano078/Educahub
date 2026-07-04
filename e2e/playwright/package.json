@@ -4,9 +4,14 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "test": "playwright test"
+    "test": "playwright test",
+    "install:browsers": "playwright install chromium firefox webkit --with-deps",
+    "install:browsers:local": "playwright install chromium firefox webkit"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "devDependencies": {
-    "@playwright/test": "^1.52.0"
+    "@playwright/test": "1.60.0"
   }
 }

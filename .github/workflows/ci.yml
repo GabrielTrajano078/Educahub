@@ -58,7 +58,7 @@ jobs:
   e2e:
     name: E2E (Playwright)
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 40
 
     steps:
       - name: Checkout
@@ -85,9 +85,10 @@ jobs:
           npm ci --prefix backend
           npm ci --prefix e2e/playwright
 
-      - name: Install Playwright Chromium
+      # Browsers devem coincidir com @playwright/test em e2e/playwright/package.json (npm run install:browsers).
+      - name: Install Playwright browsers
         working-directory: e2e/playwright
-        run: npx playwright install chromium --with-deps
+        run: npm run install:browsers
 
       - name: Subir Mongo (compose E2E)
         run: |
@@ -124,7 +125,7 @@ jobs:
             sleep 2
           done
           cd e2e/playwright
-          npx playwright test
+          npm test
           STATUS=$?
           cd ../..
           kill "$API_PID" 2>/dev/null || true

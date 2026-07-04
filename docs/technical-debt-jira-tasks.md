@@ -212,6 +212,11 @@ Hoje há smoke no login/signup e validações com intercept/mocks na API em algu
 **Critérios de aceite**
 - Pelo menos um fluxo estável sem flakyness documentado nos critérios de retry.
 
+**Status de implementação**
+- `global-setup.ts` faz bootstrap do admin E2E; `auth.setup.ts` grava `storageState`.
+- Specs `authenticated-dashboard.spec.ts` e `authenticated-navigation.spec.ts` (login real + turmas/provas).
+- Retries `2` em CI (`playwright.config.ts`).
+
 ---
 
 ### Título (opcional)
@@ -226,6 +231,10 @@ Apenas Chromium está configurado em `playwright.config.ts`.
 **Critérios de aceite**
 - CI configurada com timeouts e paralelização adequados; falhas documentadas.
 
+**Status de implementação**
+- Projetos `chromium`, `firefox`, `webkit` (+ variantes `-guest`) em `playwright.config.ts`.
+- CI instala os três browsers (`npm run install:browsers`); timeout do job E2E: 40 min; `workers: 1` em CI.
+
 ---
 
 ### Título
@@ -239,6 +248,13 @@ Garantir alinhamento entre `@playwright/test` no `e2e/playwright/package.json` e
 
 **Critérios de aceite**
 - Pipeline CI instala browsers corretamente em cada build que corre E2E.
+
+**Status de implementação**
+- `@playwright/test` fixado em `1.60.0` em `e2e/playwright/package.json` (mínimo documentado: 1.52.0).
+- Scripts `install:browsers` (CI, `--with-deps`) e `install:browsers:local` (dev) no mesmo pacote.
+- Job `e2e` em `.github/workflows/ci.yml` usa `npm run install:browsers` após `npm ci`.
+- Orquestrador `e2e/run_e2e.py` chama `install:browsers:local` antes dos testes.
+- Guia em `e2e/README.md` (secção «Playwright — versão e browsers»).
 
 ---
 
