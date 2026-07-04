@@ -1,6 +1,7 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig, devices } from "@playwright/test";
+import { AUTH_STORAGE_PATH } from "./fixtures/e2e-auth.constants";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../..");
@@ -10,6 +11,15 @@ const webDir = path.join(repoRoot, "web");
 const baseURL = process.env.E2E_BASE_URL ?? "http://127.0.0.1:5173";
 const skipWebServer = process.env.E2E_SKIP_WEB_SERVER === "1";
 const headed = process.env.E2E_HEADED === "1";
+
+const guestSpecs = /(smoke|routing|login-validation)\.spec\.ts/;
+const authSpecs = /authenticated-.*\.spec\.ts/;
+
+const browserMatrix = [
+  { name: "chromium", device: "Desktop Chrome" },
+  { name: "firefox", device: "Desktop Firefox" },
+  { name: "webkit", device: "Desktop Safari" },
+] as const;
 
 export default defineConfig({
   testDir: "./tests",
@@ -26,7 +36,23 @@ export default defineConfig({
     video: "on-first-retry",
     headless: !headed,
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    { name: "setup", testMatch: /auth\.setup\.ts/ },
+    ...browserMatrix.map(({ name, device }) => ({
+      name: `${name}-guest`,
+      use: { ...devices[device] },
+      testMatch: guestSpecs,
+    })),
+    ...browserMatrix.map(({ name, device }) => ({
+      name,
+      use: {
+        ...devices[device],
+        storageState: AUTH_STORAGE_PATH,
+      },
+      dependencies: ["setup"],
+      testMatch: authSpecs,
+    })),
+  ],
   webServer: skipWebServer
     ? undefined
     : {

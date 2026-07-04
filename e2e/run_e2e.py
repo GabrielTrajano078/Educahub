@@ -165,7 +165,7 @@ def cmd_test(args: argparse.Namespace) -> None:
     if not args.skip_install:
         subprocess.run(["npm", "ci"], cwd=PLAYWRIGHT_DIR, check=True)
         subprocess.run(
-            ["npx", "playwright", "install", "chromium"],
+            ["npm", "run", "install:browsers:local"],
             cwd=PLAYWRIGHT_DIR,
             check=True,
         )
@@ -213,8 +213,7 @@ def cmd_all(args: argparse.Namespace) -> None:
 
 def cmd_setup_only(_args: argparse.Namespace) -> None:
     print(
-        "setup-only: sem projeto Playwright de autenticação (storageState). "
-        "Crie admin em /signup ou use seed do backend antes dos fluxos logados.",
+        "setup-only: use `auth.setup.ts` (projeto Playwright `setup`) para gerar storageState em .auth/.",
         flush=True,
     )
 
