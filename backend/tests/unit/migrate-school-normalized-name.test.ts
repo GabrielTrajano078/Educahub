@@ -27,7 +27,6 @@ const mockedRecord = jest.mocked(recordMigrationApplied);
 
 function mockEmptySchools() {
   const toArray = jest.fn<() => Promise<unknown[]>>().mockResolvedValue([]);
-  const aggregate = jest.fn().mockReturnValue({ toArray });
   (SchoolModel.collection.find as jest.Mock).mockReturnValue({
     [Symbol.asyncIterator]: async function* () {
       // vazio
