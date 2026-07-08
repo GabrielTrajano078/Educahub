@@ -1,3 +1,5 @@
+// Jimp CJS: migrar para import tipado em QODE-26.
+// eslint-disable-next-line @typescript-eslint/no-require-imports -- compatibilidade atual com bundler CJS do backend
 const Jimp = require("jimp");
 
 import { getOmrTemplateLayout } from "./omr-template";

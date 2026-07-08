@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { answerSchema, markedAnswerSchema, objectIdSchema, processingStatusSchema, scanTypeSchema } from "../common/schemas";
+import { answerSchema, objectIdSchema, processingStatusSchema, scanTypeSchema } from "../common/schemas";
 
 export const registerAnswerSheetSchema = z.object({
   examId: objectIdSchema,

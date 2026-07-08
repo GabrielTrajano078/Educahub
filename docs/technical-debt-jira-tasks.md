@@ -81,6 +81,12 @@ O pacote `web` tem `eslint` e script `lint`; o `backend` não tem lint automatiz
 **Critérios de aceite**
 - `npm run lint` no diretório `backend` executa sem erro no código atual ou com lista explícita de exceções documentadas (`eslint-disable` mínimos).
 
+**Status de implementação**
+- `eslint.config.mjs` (flat config) com `typescript-eslint` + globals Node.
+- Script `npm run lint` em `backend/package.json`.
+- Job `backend-tests` no CI executa `npm run lint` antes dos testes.
+- Exceção documentada: `no-require-imports` em `omr.service.ts` (pendente QODE-26).
+
 ---
 
 ### Título
